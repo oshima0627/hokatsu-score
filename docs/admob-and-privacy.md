@@ -31,11 +31,27 @@
   - 同一セッション内で自治体を切り替えて再計算しても、2回目以降は表示しない
   - これによりユーザー体験を損なわず、機会収益も確保
 
-### AdMob 管理画面の設定
+### AdMob 管理画面／SDK の設定
 
-- 広告コンテンツのフィルタリング：**G レーティング相当**に設定
-- 子ども向けコンテンツ扱い：**OFF**（対象は成人保護者のため）
+- **広告コンテンツのフィルタリング：既定（PG 相当）で十分**
+  - G レーティングへの強制は保護者向けアプリでは eCPM を下げるのみで、ポリシー上も必要ない
+- **子ども向けコンテンツ扱い：OFF**（対象は成人保護者のため）
 - パーソナライズ広告：日本のみ配信のため通常通り（GDPR-K考慮不要）
+
+### SDK 側での明示設定
+
+Google Mobile Ads SDK の `RequestConfiguration` で **「子ども向けではない」ことを明示**する。
+未指定のままだとポリシー警告の対象になる可能性があるため必須。
+
+```dart
+await MobileAds.instance.updateRequestConfiguration(
+  RequestConfiguration(
+    tagForChildDirectedTreatment: TagForChildDirectedTreatment.no,
+    tagForUnderAgeOfConsent: TagForUnderAgeOfConsent.no,
+    maxAdContentRating: MaxAdContentRating.pg,
+  ),
+);
+```
 
 -----
 
@@ -44,9 +60,21 @@
 ユーザーが入力した家庭情報は **要配慮個人情報** を含む（障害等級、生活保護受給、就労状況など）。
 
 - `shared_preferences`（平文XML）には保存しない
-- **`flutter_secure_storage`** を使用する（Android: EncryptedSharedPreferences）
+- **`flutter_secure_storage 10.x`** を使用する
 - 直近の入力値は永続保存し、起動時に再表示する
 - 設定画面に「保存データを削除」ボタンを必ず提供する
+
+### 初期化コード例（必須オプション）
+
+`flutter_secure_storage 10.x` では `encryptedSharedPreferences: true` の明示が必須。
+
+```dart
+const storage = FlutterSecureStorage(
+  aOptions: AndroidOptions(
+    encryptedSharedPreferences: true,
+  ),
+);
+```
 
 > ⚠️ 軽微な UI 設定（最後に選んだ自治体ID、テーマ等）に限り `shared_preferences` を併用することは可。
 
