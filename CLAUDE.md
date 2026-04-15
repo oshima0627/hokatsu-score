@@ -14,7 +14,7 @@
 |フレームワーク   |Flutter（Dart）                     |
 |広告        |google_mobile_ads（AdMob）          |
 |状態管理      |Riverpod（flutter_riverpod）        |
-|ローカル保存    |shared_preferences                |
+|ローカル保存    |flutter_secure_storage（暗号化）       |
 |ターゲット     |Android（Google Play）              |
 |minSdk    |API 21（Android 5.0）               |
 |targetSdk |API 36（Android 16）※Google Play提出必須|
@@ -63,7 +63,10 @@ hokatsu-score/
 │   │   ├── family_profile.dart           # 世帯情報モデル
 │   │   └── score_result.dart             # 計算結果モデル
 │   ├── providers/
-│   │   └── score_provider.dart           # Riverpod状態管理
+│   │   ├── parent_provider.dart          # 父・母の入力状態
+│   │   ├── family_provider.dart          # 世帯（調整指数）入力状態
+│   │   ├── municipality_provider.dart    # 選択中の自治体
+│   │   └── score_provider.dart           # 上記を集約してスコア計算
 │   ├── screens/
 │   │   ├── home_screen.dart              # トップ画面（自治体選択）
 │   │   ├── parent_input_screen.dart      # 保護者情報入力（父・母共用）
@@ -100,31 +103,65 @@ hokatsu-score/
 
 ### `WorkStatus`（enum）
 
-| 値                          | 表示名         |
-|----------------------------|-------------|
-| `employed`                 | 就労中（雇用契約あり） |
-| `employedProspect`         | 採用予定        |
-| `selfEmployedNoProof`      | 自営業（証明書なし）  |
-| `pregnant`                 | 妊娠中         |
-| `pregnantMultiple`         | 妊娠中（多胎）     |
-| `hospitalizedBedridden`    | 入院・常時臥床     |
-| `medicalTreatmentSerious`  | 療養中（重度）     |
-| `medicalTreatmentMild`     | 療養中（軽度）     |
-| `jobSeeking`               | 求職中         |
-| `parentalLeave`            | 育休中         |
-| `pseudoParentalLeave`      | みなし育休中      |
-| `caregiving`               | 介護中         |
-| `student`                  | 就学・職業訓練     |
+UI上は9項目に集約し、サブ選択（妊娠の単胎/多胎、療養の重度/軽度等）で内部 enum 値を決定する。
+
+| 値                          | UIカテゴリ      | 表示名         |
+|----------------------------|------------|-------------|
+| `employed`                 | 就労中        | 就労中（雇用契約あり） |
+| `employedProspect`         | 採用予定       | 採用予定        |
+| `selfEmployedNoProof`      | 就労中        | 自営業（証明書なし）  |
+| `pregnant`                 | 妊娠・産後      | 妊娠中（単胎）     |
+| `pregnantMultiple`         | 妊娠・産後      | 妊娠中（多胎）     |
+| `hospitalizedBedridden`    | 疾病・障害      | 入院・常時臥床     |
+| `medicalTreatmentSerious`  | 疾病・障害      | 療養中（重度）     |
+| `medicalTreatmentMild`     | 疾病・障害      | 療養中（軽度）     |
+| `caregiving`               | 介護中        | 介護中         |
+| `student`                  | 就学・職業訓練    | 就学・職業訓練     |
+| `jobSeeking`               | 求職中        | 求職中         |
+| `parentalLeave`            | 育休中        | 育休中         |
+| `pseudoParentalLeave`      | みなし育休中     | みなし育休中      |
+
+### `DisabilityGrade`（enum）
+
+自治体ごとに区分が異なるため、内部表現は手帳種別＋級番号で持つ。
+
+| 値             | 表示名             |
+|---------------|-----------------|
+| `none`        | なし              |
+| `physical1to2`| 身体障害者手帳 1〜2級    |
+| `physical3`   | 身体障害者手帳 3級      |
+| `physical4to6`| 身体障害者手帳 4〜6級    |
+| `mental1`     | 精神障害者保健福祉手帳 1級  |
+| `mental2`     | 精神障害者保健福祉手帳 2級  |
+| `mental3`     | 精神障害者保健福祉手帳 3級  |
+| `nursingA`    | 療育手帳 A          |
+| `nursingB`    | 療育手帳 B          |
+| `pensionA`    | 障害年金 1級         |
+| `pensionB`    | 障害年金 2級         |
+
+### `CareLevel`（enum）
+
+| 値           | 表示名      |
+|-------------|----------|
+| `none`      | なし       |
+| `support1`  | 要支援1     |
+| `support2`  | 要支援2     |
+| `care1`     | 要介護1     |
+| `care2`     | 要介護2     |
+| `care3`     | 要介護3     |
+| `care4`     | 要介護4     |
+| `care5`     | 要介護5     |
 
 ### `ParentProfile`（モデル）
 
-| フィールド               | 型               | 備考                       |
-|--------------------|----------------|--------------------------|
-| `workStatus`       | `WorkStatus`   | 就労状況                     |
-| `monthlyWorkHours` | `int`          | 月の就労時間（時間）               |
-| `disabilityGrade`  | `DisabilityGrade?` | 身体/精神/療育手帳の級・障害年金等級   |
-| `careLevel`        | `CareLevel?`   | 要介護1〜5等                  |
-| `isLeaveTarget`    | `bool`         | 育休対象児の申込か否か              |
+| フィールド              | 型                  | 備考                     |
+|--------------------|--------------------|------------------------|
+| `workStatus`       | `WorkStatus`       | 就労状況                   |
+| `monthlyWorkHours` | `int`              | 月の就労時間                 |
+| `disabilityGrade` | `DisabilityGrade`  | 障害区分（既定: `none`）        |
+| `careLevel`        | `CareLevel`        | 介護区分（既定: `none`）        |
+| `isLeaveTarget`    | `bool`             | 育休対象児の申込か否か            |
+| `extra`            | `Map<String, dynamic>?` | v2以降の自治体固有項目用拡張点（MVPは空）|
 
 ### `FamilyProfile`（モデル）
 
@@ -149,8 +186,10 @@ hokatsu-score/
 | `grandparentCanCare`           | `bool`         | 65歳未満近居祖父母が保育可能   |
 | `acceptsLeaveExtension`        | `bool`         | 育休延長許容            |
 | `hasUnpaidFees`                | `bool`         | 保育料の滞納あり          |
+| `extra`                        | `Map<String, dynamic>?` | v2以降の自治体固有項目用（MVPは空）|
 
-> ⚠️ 上記フィールドはMVP想定の最小セット。自治体ごとの固有項目は v2 以降で `Map<String, dynamic> extra` として拡張する。
+> ⚠️ 上記フィールドはMVP想定の最小セット。`extra` は MVP では未使用（null許容）。
+> 将来の自治体固有項目（例：認可外利用月数、就労期間等）は `extra` 経由で追加する。
 
 -----
 
@@ -224,7 +263,8 @@ hokatsu-score/
 > ⚠️ 上記配点はすべて那覇市の参考値。**他7自治体は項目および配点が異なる**ため、
 > 実装フェーズで各自治体ごとの調整指数差分表を本ファイルに追記すること（または `docs/scoring/` に分割）。
 
-> ⚠️ 配点は最新の公式PDFで必ず再検証すること（特に L139, L141 は年度更新で変動しやすい）。
+> ⚠️ 配点は最新の公式PDFで必ず再検証すること（特に「市内認可保育所での就労（保育士等）」と
+> 「障害者手帳保持かつ就労中」の項目は年度更新で配点・条件が変動しやすい）。
 
 -----
 
@@ -233,6 +273,8 @@ hokatsu-score/
 #### 抽象クラス（scoring/scoring_rule.dart）
 
 ```dart
+import 'dart:math' as math;
+
 abstract class ScoringRule {
   String get municipalityName;
 
@@ -242,25 +284,24 @@ abstract class ScoringRule {
   /// 対象年度（例: '令和8年度'）
   String get fiscalYear;
 
-  /// 就労状況に基づく点数
+  /// 就労状況に基づく点数（介護・就学含む）
   int calcWorkScore(ParentProfile parent);
 
   /// 障害・手帳に基づく点数
   int calcDisabilityScore(ParentProfile parent);
 
-  /// 介護状況に基づく点数
+  /// 介護（家族の要介護対応）に基づく点数
   int calcCareScore(ParentProfile parent);
 
   /// 父または母1人分の基本指数を返す。
   /// デフォルトは「就労・障害・介護のうち最大値を採用」する方式。
   /// 合算方式の自治体は本メソッドを override する。
   int calcBaseScore(ParentProfile parent) {
-    final scores = [
+    return [
       calcWorkScore(parent),
       calcDisabilityScore(parent),
       calcCareScore(parent),
-    ];
-    return scores.reduce((a, b) => a > b ? a : b);
+    ].reduce(math.max);
   }
 
   /// 世帯全体の調整指数を返す
@@ -278,9 +319,12 @@ abstract class ScoringRule {
 #### 那覇市 実装例（scoring/naha_city.dart）
 
 > 参照：那覇市「令和8年度 保育所入所選考基準表」
-> URL: https://www.city.naha.okinawa.jp/_res/projects/default_project/*page*/001/002/785/r8kijunnhyo.pdf
+> URL: https://www.city.naha.okinawa.jp/_res/projects/default_project/_page_/001/002/785/r8kijunnhyo.pdf
+> （※実URLは事前に必ず公式サイトで確認）
 
 ```dart
+import 'dart:math' as math;
+
 class NahaCityScoringRule extends ScoringRule {
   @override
   String get municipalityName => '那覇市';
@@ -296,24 +340,36 @@ class NahaCityScoringRule extends ScoringRule {
   int calcWorkScore(ParentProfile parent) {
     switch (parent.workStatus) {
       case WorkStatus.employed:
-        if (parent.monthlyWorkHours >= 160) return 30;
-        if (parent.monthlyWorkHours >= 140) return 26;
-        if (parent.monthlyWorkHours >= 120) return 22;
-        if (parent.monthlyWorkHours >= 90)  return 19;
-        if (parent.monthlyWorkHours >= 64)  return 15;
-        return 0;
-      case WorkStatus.employedProspect:    return 15;
-      case WorkStatus.selfEmployedNoProof: return 9;
-      case WorkStatus.pregnantMultiple:    return 23;
-      case WorkStatus.pregnant:            return 18;
-      case WorkStatus.hospitalizedBedridden: return 32;
+      case WorkStatus.selfEmployedNoProof:
+        final base = _scoreByHours(parent.monthlyWorkHours);
+        // 自営業（証明書なし）は上限9点で頭打ち
+        return parent.workStatus == WorkStatus.selfEmployedNoProof
+            ? math.min(base, 9)
+            : base;
+      case WorkStatus.employedProspect:        return 15;
+      case WorkStatus.pregnantMultiple:        return 23;
+      case WorkStatus.pregnant:                return 18;
+      case WorkStatus.hospitalizedBedridden:   return 32;
       case WorkStatus.medicalTreatmentSerious: return 23;
       case WorkStatus.medicalTreatmentMild:    return 12;
-      case WorkStatus.jobSeeking:          return 9;
-      case WorkStatus.parentalLeave:       return 15;
-      case WorkStatus.pseudoParentalLeave: return 7;
-      default: return 0;
+      case WorkStatus.jobSeeking:              return 9;
+      case WorkStatus.parentalLeave:           return 15;
+      case WorkStatus.pseudoParentalLeave:     return 7;
+      // 介護中は calcCareScore へ委譲（こちらは0を返す）
+      case WorkStatus.caregiving:              return 0;
+      // 就学・職業訓練は時間ベース判定
+      case WorkStatus.student:
+        return _scoreByHours(parent.monthlyWorkHours);
     }
+  }
+
+  int _scoreByHours(int hours) {
+    if (hours >= 160) return 30;
+    if (hours >= 140) return 26;
+    if (hours >= 120) return 22;
+    if (hours >= 90)  return 19;
+    if (hours >= 64)  return 15;
+    return 0;
   }
 
   @override
@@ -325,15 +381,19 @@ class NahaCityScoringRule extends ScoringRule {
   @override
   int calcCareScore(ParentProfile parent) {
     // TODO: 公式PDFの介護区分表に従って実装
+    // 例: 要介護3以上 + 同居なら高得点 等
     return 0;
   }
 
   @override
   int calcAdjustScore(FamilyProfile family) {
     int score = 0;
-    // ひとり親系は排他（より高い方を採用）
-    if (family.isSingleParent) score += 50;
-    else if (family.isPseudoSingleParent) score += 35;
+    // ひとり親系は排他（高い方を採用）。将来配点が逆転しても安全なよう max を取る。
+    final singleParentBonus = math.max(
+      family.isSingleParent ? 50 : 0,
+      family.isPseudoSingleParent ? 35 : 0,
+    );
+    score += singleParentBonus;
     if (family.isYoungParent) score += 15;         // 18歳以下出産
     if (family.isOnWelfare) score += 3;
     if (family.isNurseryWorker) score += 50;        // 市内認可で保育士就労
@@ -361,7 +421,7 @@ class NahaCityScoringRule extends ScoringRule {
 
 |自治体 |公式資料URL（確認用）                                                                                     |
 |----|-------------------------------------------------------------------------------------------------|
-|那覇市 |https://www.city.naha.okinawa.jp/_res/projects/default_project/*page*/001/002/785/r8kijunnhyo.pdf|
+|那覇市 |https://www.city.naha.okinawa.jp/_res/projects/default_project/_page_/001/002/785/r8kijunnhyo.pdf|
 |浦添市 |https://www.city.urasoe.lg.jp/ （保育課ページ）                                                          |
 |豊見城市|https://www.city.tomigusuku.lg.jp/soshiki/4/1021/gyomuannai/1/2/170.html                         |
 |糸満市 |https://www.city.itoman.lg.jp/ （保育課ページ）                                                          |
@@ -380,20 +440,38 @@ class NahaCityScoringRule extends ScoringRule {
 
 - 合計指数を大きく表示
 - 内訳（父の基本指数 / 母の基本指数 / 調整指数）を表示
-- 選択した自治体名を明示
+- 選択した自治体名と参照年度（`fiscalYear`）を明示
 - テキストシェアボタン（LINEやメモアプリへ）
 - 画面下部に免責文言を必ず表示
+
+#### シェアテキストの雛形
+
+```
+【保活スコア計算結果】
+自治体：那覇市（令和8年度基準）
+合計指数：XX点
+　父の基本指数：XX点
+　母の基本指数：XX点
+　調整指数：XX点
+
+※本結果はあくまで目安です。実際の選考結果を保証するものではありません。
+保活スコア計算アプリ
+```
 
 -----
 
 ### 5. 広告（AdMob）
 
 - バナー広告：結果画面の下部に常時表示（結果表示エリアと十分な余白を設けて誤クリック防止）
-- インタースティシャル広告：結果表示「画面遷移直前」に表示。**頻度キャップは1セッションあたり1回、かつ前回表示から3分以上経過後**とする。
-- AdMob管理画面で「子ども向けコンテンツ扱い」「広告コンテンツのフィルタリング」を適切に設定する。
-- 本アプリは家族・育児カテゴリのため **Google Play Families ポリシー** および **COPPA / GDPR-K** への適合が必須。
+- インタースティシャル広告：結果表示画面への遷移直前に表示。
+  - **頻度キャップ：前回表示から3分以上経過した場合のみ表示**
+  - 自治体を切り替えて再計算する場合は連続表示を避けるため、上記タイマーで自然に抑制される
+- AdMob管理画面で「広告コンテンツのフィルタリング」を G レーティング相当に設定する。
+- 本アプリは家族・育児カテゴリのため **Google Play Families ポリシー** に適合させる。
   - 認定広告ネットワーク以外を無効化
-  - 行動ターゲティング広告（パーソナライズ広告）はオフを既定とし、UMP SDK で同意取得
+  - 「子ども向けコンテンツ扱い」を AdMob 管理画面で設定（パーソナライズ広告は既定オフ）
+- **配信地域：日本のみ** とするため、UMP SDK（GDPR同意フロー）は導入しない。
+  - 将来海外配信する場合は UMP SDK と地域別同意ロジックを追加すること
 
 -----
 
@@ -405,7 +483,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.5.1
   google_mobile_ads: ^5.1.0
-  shared_preferences: ^2.3.2
+  flutter_secure_storage: ^9.2.2   # 要配慮個人情報の暗号化保存
   share_plus: ^10.0.0
 
 dev_dependencies:
@@ -413,6 +491,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^4.0.0
 ```
+
+> ⚠️ `shared_preferences` は要配慮個人情報を平文で保存してしまうため使用しない。
+> 軽微な UI 設定（最後に選んだ自治体ID等）に限り `shared_preferences` を併用することは可。
 
 -----
 
@@ -442,7 +523,7 @@ android {
 - [ ] 残り7自治体の指数ロジック実装（各公式PDFを確認して実装）
 - [ ] 父母それぞれの基本指数 + 調整指数の計算・結果表示
 - [ ] テキストシェア機能
-- [ ] AdMobバナー広告 + UMP同意フロー
+- [ ] AdMobバナー広告（日本配信のみ、UMPなし）
 - [ ] 免責文言の表示
 - [ ] **スコア計算ユニットテスト**（自治体ごとに代表ケースを最低5件）
 - [ ] **プライバシーポリシー作成と公開**（Google Play 必須）
@@ -479,6 +560,15 @@ android {
 - メインカラー：沖縄らしいターコイズ or 温かみのあるオレンジ系
 - フォント：Noto Sans JP
 - シンプルで直感的なUI（保活で疲弊している親御さん向け）
+- **言語：日本語のみ**（`flutter_localizations` は当面導入しない）
+
+### アクセシビリティ最低要件
+
+- すべての `TextField` に `labelText` を設定（スクリーンリーダー対応）
+- タップターゲットは最小 48×48 dp
+- 端末のフォントスケール設定に追従（`MediaQuery.textScaleFactor` を尊重し、固定 fontSize は使わない）
+- 色のみで情報を伝えない（減点項目はアイコン＋色でラベリング）
+- コントラスト比 WCAG AA 以上
 
 -----
 
@@ -486,16 +576,33 @@ android {
 
 - 計算結果はあくまで目安であり、実際の選考結果を保証するものではない旨を画面上に必ず明記
 - 各自治体の指数ルールは毎年更新される。ルールファイルに参照元URLと対象年度をコメントで残すこと
-- ユーザーが入力した家庭情報は `shared_preferences` でローカルのみ保存（外部サーバー送信なし）
-- ただし AdMob は広告ID等の識別子を Google に送信する。これをプライバシーポリシーおよびデータセーフティで明示すること
-- 就労時間・障害等級・生活保護受給有無等は **要配慮個人情報**を含むため、誤操作時の削除手段（設定画面に「保存データを削除」ボタン）を必ず提供する
 - 指数データは各自治体の公式ページ・入園案内を一次情報として使用すること
+
+### ローカル保存ポリシー
+
+- ユーザーが入力した家庭情報は **要配慮個人情報** を含む（障害等級、生活保護受給など）
+- そのため、`shared_preferences`（平文XML）には保存せず、**`flutter_secure_storage`** を使用する
+  - Android: EncryptedSharedPreferences で保存
+  - 直近の入力値は永続保存し、起動時に再表示する用途
+- 設定画面に「保存データを削除」ボタンを必ず提供する
+- 外部サーバーへの送信は行わない（AdMob による広告識別子送信を除く）
 
 ### Google Play 公開時に必要なもの
 
 - プライバシーポリシーURL（GitHub Pages 等で公開）
-- データセーフティセクション（収集データ＝広告ID／端末識別子、共有先＝Google AdMob）
+- データセーフティセクション
+  - 収集データ：広告ID／端末識別子（AdMob）
+  - 共有先：Google（AdMob）
+  - 暗号化転送：はい
+  - データ削除リクエスト方法：アプリ内「保存データを削除」ボタン
 - 対象年齢設定（家族向け or 一般）の確定
+- 配信地域：日本のみ
+
+### バージョニングと年度更新
+
+- 指数ルールは毎年度更新されるため、`pubspec.yaml` の `version` を年度切替時に必ず上げる
+- ホーム画面に「対応年度：令和X年度」を明示
+- 年度更新の際は `ScoringRule.fiscalYear` を更新し、ユニットテストのゴールデンケースも更新
 
 -----
 
