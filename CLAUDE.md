@@ -17,12 +17,14 @@
 |ローカル保存    |shared_preferences                |
 |ターゲット     |Android（Google Play）              |
 |minSdk    |API 21（Android 5.0）               |
-|targetSdk |API 35（Android 15）※Google Play提出必須|
-|compileSdk|API 35                            |
+|targetSdk |API 36（Android 16）※Google Play提出必須|
+|compileSdk|API 36                            |
 
 
-> ⚠️ Google Playは2025年8月31日以降、新規アプリにtargetSdk 35必須。
-> `android/app/build.gradle` に明示すること。
+> ⚠️ Google Playは2025年8月31日以降、新規アプリにtargetSdk 35必須、
+> 2026年8月31日以降はtargetSdk 36必須となる予定。
+> 本プロジェクトは2026年4月時点の新規開発のため、最初から `targetSdk 36` を採用する。
+> `android/app/build.gradle` に明示すること。最新要件は事前にGoogle Play公式を確認のこと。
 
 -----
 
@@ -72,6 +74,7 @@ hokatsu-score/
 │   │   └── score_card_widget.dart        # スコア表示カード
 │   └── scoring/
 │       ├── scoring_rule.dart             # 抽象クラス（共通インターフェース）
+│       ├── scoring_rule_factory.dart     # 自治体ID→ScoringRule解決
 │       ├── naha_city.dart                # 那覇市
 │       ├── urasoe_city.dart              # 浦添市
 │       ├── tomigusuku_city.dart          # 豊見城市
@@ -80,12 +83,74 @@ hokatsu-score/
 │       ├── haebaru_town.dart             # 南風原町
 │       ├── yonabaru_town.dart            # 与那原町
 │       └── yaese_town.dart               # 八重瀬町
+├── test/
+│   └── scoring/
+│       ├── naha_city_test.dart           # 那覇市スコア計算ユニットテスト
+│       └── ...                           # 各自治体ごとに作成
 ├── android/
 │   └── app/
 │       └── build.gradle
 ├── pubspec.yaml
 └── CLAUDE.md
 ```
+
+-----
+
+## データモデル定義
+
+### `WorkStatus`（enum）
+
+| 値                          | 表示名         |
+|----------------------------|-------------|
+| `employed`                 | 就労中（雇用契約あり） |
+| `employedProspect`         | 採用予定        |
+| `selfEmployedNoProof`      | 自営業（証明書なし）  |
+| `pregnant`                 | 妊娠中         |
+| `pregnantMultiple`         | 妊娠中（多胎）     |
+| `hospitalizedBedridden`    | 入院・常時臥床     |
+| `medicalTreatmentSerious`  | 療養中（重度）     |
+| `medicalTreatmentMild`     | 療養中（軽度）     |
+| `jobSeeking`               | 求職中         |
+| `parentalLeave`            | 育休中         |
+| `pseudoParentalLeave`      | みなし育休中      |
+| `caregiving`               | 介護中         |
+| `student`                  | 就学・職業訓練     |
+
+### `ParentProfile`（モデル）
+
+| フィールド               | 型               | 備考                       |
+|--------------------|----------------|--------------------------|
+| `workStatus`       | `WorkStatus`   | 就労状況                     |
+| `monthlyWorkHours` | `int`          | 月の就労時間（時間）               |
+| `disabilityGrade`  | `DisabilityGrade?` | 身体/精神/療育手帳の級・障害年金等級   |
+| `careLevel`        | `CareLevel?`   | 要介護1〜5等                  |
+| `isLeaveTarget`    | `bool`         | 育休対象児の申込か否か              |
+
+### `FamilyProfile`（モデル）
+
+| フィールド                          | 型               | 備考                |
+|--------------------------------|----------------|-------------------|
+| `father`                       | `ParentProfile`| 父                 |
+| `mother`                       | `ParentProfile`| 母                 |
+| `isSingleParent`               | `bool`         | ひとり親世帯            |
+| `isPseudoSingleParent`         | `bool`         | ひとり親みなし（排他）       |
+| `isYoungParent`                | `bool`         | 18歳以下出産           |
+| `isOnWelfare`                  | `bool`         | 生活保護受給中           |
+| `isNurseryWorker`              | `bool`         | 市内認可で保育士就労        |
+| `isChildcareSupporter`         | `bool`         | 子育て支援員            |
+| `returningFromLeave`           | `bool`         | 育休から復帰予定          |
+| `hasDisabilityAndWorks`        | `bool`         | 手帳保持＋就労中          |
+| `isTransferredAway`            | `bool`         | 単身赴任              |
+| `isUsingNinkagai`              | `bool`         | 認可外利用中            |
+| `siblingAtFirstChoiceNursery`  | `bool`         | きょうだいが第1希望園在園     |
+| `twoSiblingsApplyingSameNursery` | `bool`       | きょうだい2名同時同園申込     |
+| `siblingHasDisability`         | `bool`         | きょうだいに障害児         |
+| `isGraduatingFromSmallNursery` | `bool`         | 地域型保育園卒園児         |
+| `grandparentCanCare`           | `bool`         | 65歳未満近居祖父母が保育可能   |
+| `acceptsLeaveExtension`        | `bool`         | 育休延長許容            |
+| `hasUnpaidFees`                | `bool`         | 保育料の滞納あり          |
+
+> ⚠️ 上記フィールドはMVP想定の最小セット。自治体ごとの固有項目は v2 以降で `Map<String, dynamic> extra` として拡張する。
 
 -----
 
@@ -128,26 +193,38 @@ hokatsu-score/
 > 他自治体も同様の月間時間ベースが多いが、日数・時間の組み合わせで判定する自治体も存在する。
 > 各自治体ルールファイルで解釈する。UIは共通入力、ロジックを分離すること。
 
+> ⚠️ 「みなし育休中」の定義：育児休業給付金を受給せずに実態として育児休業に相当する休業を取得しているケース。
+> 自治体により定義が異なるため、各自治体ルールでの取扱を明示すること。
+
+> ⚠️ 基本指数の算定方式：自治体により「就労・障害・介護のうち最も高い点数を採用」する方式と
+> 「合算」する方式が混在する。各自治体ルールファイルで方針を明記すること（デフォルトは「最大値採用」）。
+
 #### 調整指数（世帯全体）
 
-|項目               |入力形式    |備考                     |
-|-----------------|--------|-----------------------|
-|ひとり親世帯           |はい / いいえ|那覇市+50点（最大加算項目）        |
-|ひとり親みなし（離婚調停中等）  |はい / いいえ|那覧市+35点                |
-|18歳以下での出産（若年出産）  |はい / いいえ|那覇市+15点                |
-|生活保護受給中          |はい / いいえ|那覇市+3点                 |
-|市内認可保育所での就労（保育士等）|はい / いいえ|那覇市+50点（保育士）/ +20点（支援員）|
-|育児休業から復帰予定       |はい / いいえ|那覇市+9点                 |
-|障害者手帳保持かつ月64h以上就労|はい / いいえ|那覇市+5点                 |
-|単身赴任（県外・離島）      |はい / いいえ|那覇市+5点                 |
-|認可外保育施設を現在利用中    |はい / いいえ|那覇市+11点（条件あり）          |
-|きょうだいが第1希望園に在園中  |はい / いいえ|那覇市+7点                 |
-|きょうだい2名同時同園申込    |はい / いいえ|那覇市+6点                 |
-|きょうだいに障害児あり      |はい / いいえ|那覇市+5点                 |
-|地域型保育園卒園児        |はい / いいえ|那覇市+100点（優先）           |
-|65歳未満の近居祖父母が保育可能 |はい / いいえ|多くの自治体で減点              |
-|希望園入れない場合に育休延長許容 |はい / いいえ|那覇市−500点(実質辞退)         |
-|保育料の滞納あり         |はい / いいえ|那覇市−20点                |
+|項目               |入力形式    |備考                                       |
+|-----------------|--------|-----------------------------------------|
+|ひとり親世帯           |はい / いいえ|那覇市+50点（「ひとり親みなし」と排他、より高い方を採用）         |
+|ひとり親みなし（離婚調停中等）  |はい / いいえ|那覇市+35点（「ひとり親世帯」と排他）                   |
+|18歳以下での出産（若年出産）  |はい / いいえ|那覇市+15点                                  |
+|生活保護受給中          |はい / いいえ|那覇市+3点                                   |
+|市内認可保育所での就労（保育士等）|はい / いいえ|那覇市+50点（保育士）/ +20点（支援員）                  |
+|育児休業から復帰予定       |はい / いいえ|那覇市+9点                                   |
+|障害者手帳保持かつ就労中     |はい / いいえ|那覇市+5点（就労時間要件は最新PDFで再確認）                 |
+|単身赴任（県外・離島）      |はい / いいえ|那覇市+5点                                   |
+|認可外保育施設を現在利用中    |はい / いいえ|那覇市+11点（条件あり）                            |
+|きょうだいが第1希望園に在園中  |はい / いいえ|那覇市+7点                                   |
+|きょうだい2名同時同園申込    |はい / いいえ|那覇市+6点                                   |
+|きょうだいに障害児あり      |はい / いいえ|那覇市+5点                                   |
+|地域型保育園卒園児        |はい / いいえ|那覇市+100点（優先）                             |
+|65歳未満の近居祖父母が保育可能 |はい / いいえ|多くの自治体で減点                                |
+|希望園入れない場合に育休延長許容 |はい / いいえ|那覇市−500点(実質辞退)                           |
+|保育料の滞納あり         |はい / いいえ|那覇市−20点                                  |
+
+
+> ⚠️ 上記配点はすべて那覇市の参考値。**他7自治体は項目および配点が異なる**ため、
+> 実装フェーズで各自治体ごとの調整指数差分表を本ファイルに追記すること（または `docs/scoring/` に分割）。
+
+> ⚠️ 配点は最新の公式PDFで必ず再検証すること（特に L139, L141 は年度更新で変動しやすい）。
 
 -----
 
@@ -159,8 +236,32 @@ hokatsu-score/
 abstract class ScoringRule {
   String get municipalityName;
 
-  /// 父または母1人分の基本指数を返す
-  int calcBaseScore(ParentProfile parent);
+  /// 参照した公式PDFのURL
+  String get sourceUrl;
+
+  /// 対象年度（例: '令和8年度'）
+  String get fiscalYear;
+
+  /// 就労状況に基づく点数
+  int calcWorkScore(ParentProfile parent);
+
+  /// 障害・手帳に基づく点数
+  int calcDisabilityScore(ParentProfile parent);
+
+  /// 介護状況に基づく点数
+  int calcCareScore(ParentProfile parent);
+
+  /// 父または母1人分の基本指数を返す。
+  /// デフォルトは「就労・障害・介護のうち最大値を採用」する方式。
+  /// 合算方式の自治体は本メソッドを override する。
+  int calcBaseScore(ParentProfile parent) {
+    final scores = [
+      calcWorkScore(parent),
+      calcDisabilityScore(parent),
+      calcCareScore(parent),
+    ];
+    return scores.reduce((a, b) => a > b ? a : b);
+  }
 
   /// 世帯全体の調整指数を返す
   int calcAdjustScore(FamilyProfile family);
@@ -185,7 +286,14 @@ class NahaCityScoringRule extends ScoringRule {
   String get municipalityName => '那覇市';
 
   @override
-  int calcBaseScore(ParentProfile parent) {
+  String get sourceUrl =>
+      'https://www.city.naha.okinawa.jp/_res/projects/default_project/_page_/001/002/785/r8kijunnhyo.pdf';
+
+  @override
+  String get fiscalYear => '令和8年度';
+
+  @override
+  int calcWorkScore(ParentProfile parent) {
     switch (parent.workStatus) {
       case WorkStatus.employed:
         if (parent.monthlyWorkHours >= 160) return 30;
@@ -204,14 +312,26 @@ class NahaCityScoringRule extends ScoringRule {
       case WorkStatus.jobSeeking:          return 9;
       case WorkStatus.parentalLeave:       return 15;
       case WorkStatus.pseudoParentalLeave: return 7;
-      // 障害・手帳は別メソッドで処理
       default: return 0;
     }
   }
 
   @override
+  int calcDisabilityScore(ParentProfile parent) {
+    // TODO: 公式PDFの障害区分表に従って実装
+    return 0;
+  }
+
+  @override
+  int calcCareScore(ParentProfile parent) {
+    // TODO: 公式PDFの介護区分表に従って実装
+    return 0;
+  }
+
+  @override
   int calcAdjustScore(FamilyProfile family) {
     int score = 0;
+    // ひとり親系は排他（より高い方を採用）
     if (family.isSingleParent) score += 50;
     else if (family.isPseudoSingleParent) score += 35;
     if (family.isYoungParent) score += 15;         // 18歳以下出産
@@ -268,8 +388,12 @@ class NahaCityScoringRule extends ScoringRule {
 
 ### 5. 広告（AdMob）
 
-- バナー広告：結果画面の下部に常時表示
-- インタースティシャル広告：結果表示時に1回
+- バナー広告：結果画面の下部に常時表示（結果表示エリアと十分な余白を設けて誤クリック防止）
+- インタースティシャル広告：結果表示「画面遷移直前」に表示。**頻度キャップは1セッションあたり1回、かつ前回表示から3分以上経過後**とする。
+- AdMob管理画面で「子ども向けコンテンツ扱い」「広告コンテンツのフィルタリング」を適切に設定する。
+- 本アプリは家族・育児カテゴリのため **Google Play Families ポリシー** および **COPPA / GDPR-K** への適合が必須。
+  - 認定広告ネットワーク以外を無効化
+  - 行動ターゲティング広告（パーソナライズ広告）はオフを既定とし、UMP SDK で同意取得
 
 -----
 
@@ -296,12 +420,12 @@ dev_dependencies:
 
 ```gradle
 android {
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.nexeedlab.hokatsu_score"
         minSdk 21
-        targetSdk 35
+        targetSdk 36
         versionCode 1
         versionName "1.0.0"
     }
@@ -318,9 +442,24 @@ android {
 - [ ] 残り7自治体の指数ロジック実装（各公式PDFを確認して実装）
 - [ ] 父母それぞれの基本指数 + 調整指数の計算・結果表示
 - [ ] テキストシェア機能
-- [ ] AdMobバナー広告
+- [ ] AdMobバナー広告 + UMP同意フロー
 - [ ] 免責文言の表示
+- [ ] **スコア計算ユニットテスト**（自治体ごとに代表ケースを最低5件）
+- [ ] **プライバシーポリシー作成と公開**（Google Play 必須）
+- [ ] **データセーフティセクション記入**（Google Play Console）
 - [ ] Google Playリリース
+
+-----
+
+## テスト方針
+
+- スコア計算は副作用がなく純粋関数で構成されるため、`test/scoring/<municipality>_test.dart` で網羅テスト必須
+- 各自治体ファイルにつき以下を最低限カバー
+  - 月の就労時間境界値（63h / 64h / 89h / 90h / ... / 160h）
+  - ひとり親 / ひとり親みなしの排他
+  - 育休延長許容で大きな減点が反映されること
+  - 全フラグOFFで0点であること
+- ゴールデンテスト（PDF掲載例の数値を再現）を1自治体あたり最低1ケース
 
 -----
 
@@ -347,8 +486,16 @@ android {
 
 - 計算結果はあくまで目安であり、実際の選考結果を保証するものではない旨を画面上に必ず明記
 - 各自治体の指数ルールは毎年更新される。ルールファイルに参照元URLと対象年度をコメントで残すこと
-- 個人情報はローカルのみ保存（サーバー送信なし）
+- ユーザーが入力した家庭情報は `shared_preferences` でローカルのみ保存（外部サーバー送信なし）
+- ただし AdMob は広告ID等の識別子を Google に送信する。これをプライバシーポリシーおよびデータセーフティで明示すること
+- 就労時間・障害等級・生活保護受給有無等は **要配慮個人情報**を含むため、誤操作時の削除手段（設定画面に「保存データを削除」ボタン）を必ず提供する
 - 指数データは各自治体の公式ページ・入園案内を一次情報として使用すること
+
+### Google Play 公開時に必要なもの
+
+- プライバシーポリシーURL（GitHub Pages 等で公開）
+- データセーフティセクション（収集データ＝広告ID／端末識別子、共有先＝Google AdMob）
+- 対象年齢設定（家族向け or 一般）の確定
 
 -----
 
@@ -356,27 +503,36 @@ android {
 
 ### ブランチ運用
 
-- 作業ブランチ：`claude/hokatsu-score-app-aP5Yl`
-- 作業完了時は **毎回 `main` ブランチへマージする**
+- 作業ブランチ命名規約：`claude/<topic>-<shortid>`
+  - 例：`claude/naha-scoring-aP5Yl`、`claude/review-claude-md-cFZXt`
+- 1タスク = 1ブランチを基本とし、**固定ブランチを使い回さない**
+- 直接 `main` にコミットしない
 
-### 作業完了時の標準フロー
+### 作業完了時の標準フロー（個人開発モード）
 
-1. 作業ブランチ（`claude/hokatsu-score-app-aP5Yl`）でコミット
-2. 作業ブランチをリモートへプッシュ
-3. **`main` ブランチへマージしてプッシュする**（毎回実施）
+1. 作業ブランチでコミット
+2. 作業ブランチをリモートへプッシュ（`git push -u origin <branch>`）
+3. レビュー不要かつ破壊的影響がないと判断できる場合は `main` にマージ
 
 ```bash
-# 例：作業ブランチで作業完了後
-git push -u origin claude/hokatsu-score-app-aP5Yl
+# 例：作業完了後
+git push -u origin claude/<topic>-<shortid>
 
-# main にマージ
+# main にマージ（個人開発時のみ）
 git checkout main
-git merge claude/hokatsu-score-app-aP5Yl
+git pull origin main
+git merge --no-ff claude/<topic>-<shortid>
 git push origin main
 
 # 作業ブランチへ戻る
-git checkout claude/hokatsu-score-app-aP5Yl
+git checkout claude/<topic>-<shortid>
 ```
 
-> ⚠️ タスクが完了したら毎回 `main` へのマージまで実施すること。
-> 作業ブランチへのプッシュだけで終わらせない。
+### 将来コラボ／CI導入時の運用
+
+- `main` をブランチ保護（直接プッシュ禁止、PR必須、CI緑化必須）
+- PR レビュー経由でのマージに切り替える
+- `flutter test` および `flutter analyze` を CI 必須チェックとする
+
+> ⚠️ 「作業ブランチへのプッシュだけで終わらせない」原則は維持するが、
+> マージ前に変更の影響範囲を必ず確認すること。スコアロジック変更時はテスト緑化必須。
