@@ -349,3 +349,34 @@ android {
 - 各自治体の指数ルールは毎年更新される。ルールファイルに参照元URLと対象年度をコメントで残すこと
 - 個人情報はローカルのみ保存（サーバー送信なし）
 - 指数データは各自治体の公式ページ・入園案内を一次情報として使用すること
+
+-----
+
+## 開発ワークフロー（必読）
+
+### ブランチ運用
+
+- 作業ブランチ：`claude/hokatsu-score-app-aP5Yl`
+- 作業完了時は **毎回 `main` ブランチへマージする**
+
+### 作業完了時の標準フロー
+
+1. 作業ブランチ（`claude/hokatsu-score-app-aP5Yl`）でコミット
+2. 作業ブランチをリモートへプッシュ
+3. **`main` ブランチへマージしてプッシュする**（毎回実施）
+
+```bash
+# 例：作業ブランチで作業完了後
+git push -u origin claude/hokatsu-score-app-aP5Yl
+
+# main にマージ
+git checkout main
+git merge claude/hokatsu-score-app-aP5Yl
+git push origin main
+
+# 作業ブランチへ戻る
+git checkout claude/hokatsu-score-app-aP5Yl
+```
+
+> ⚠️ タスクが完了したら毎回 `main` へのマージまで実施すること。
+> 作業ブランチへのプッシュだけで終わらせない。
