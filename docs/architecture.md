@@ -12,11 +12,15 @@ hokatsu-score/
 │   │   ├── parent_profile.dart           # 保護者情報モデル（父 or 母）
 │   │   ├── family_profile.dart           # 世帯情報モデル
 │   │   └── score_result.dart             # 計算結果モデル
-│   ├── providers/
-│   │   ├── parent_provider.dart          # 父・母の入力状態
-│   │   ├── family_provider.dart          # 世帯（調整指数）入力状態
-│   │   ├── municipality_provider.dart    # 選択中の自治体
-│   │   └── score_provider.dart           # 上記を集約してスコア計算（computed Provider）
+│   ├── providers/                        # Riverpod 3.x + riverpod_generator
+│   │   ├── parent_provider.dart          # 父・母の入力状態（Notifier）
+│   │   ├── parent_provider.g.dart        # 自動生成
+│   │   ├── family_provider.dart          # 世帯（調整指数）入力状態（Notifier）
+│   │   ├── family_provider.g.dart        # 自動生成
+│   │   ├── municipality_provider.dart    # 選択中の自治体（Notifier）
+│   │   ├── municipality_provider.g.dart  # 自動生成
+│   │   ├── score_provider.dart           # 上記を集約してスコア計算（computed Provider）
+│   │   └── score_provider.g.dart         # 自動生成
 │   ├── screens/
 │   │   ├── home_screen.dart              # トップ画面（自治体選択）
 │   │   ├── parent_input_screen.dart      # 保護者情報入力（父・母共用）
@@ -232,3 +236,82 @@ class ScoringRuleFactory {
 ### 自治体別実装
 
 各自治体の実装方針と公式資料 URL は [`scoring/README.md`](./scoring/README.md) を参照。
+
+-----
+
+## 状態管理（Riverpod 3.x + code generation）
+
+Riverpod 3系では `@riverpod` アノテーションと `riverpod_generator` によるコード生成が推奨される。
+2系の `StateNotifierProvider` 記法は廃止方向。
+
+### Notifier 例（`providers/parent_provider.dart`）
+
+```dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../models/parent_profile.dart';
+
+part 'parent_provider.g.dart';
+
+@riverpod
+class FatherProfile extends _$FatherProfile {
+  @override
+  ParentProfile build() => const ParentProfile.initial();
+
+  void updateWorkStatus(WorkStatus status) {
+    state = state.copyWith(workStatus: status);
+  }
+
+  void updateMonthlyWorkHours(int hours) {
+    state = state.copyWith(monthlyWorkHours: hours);
+  }
+  // ...
+}
+
+@riverpod
+class MotherProfile extends _$MotherProfile {
+  @override
+  ParentProfile build() => const ParentProfile.initial();
+  // ...
+}
+```
+
+### 集約 Provider 例（`providers/score_provider.dart`）
+
+```dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../models/score_result.dart';
+import '../scoring/scoring_rule_factory.dart';
+import 'family_provider.dart';
+import 'municipality_provider.dart';
+import 'parent_provider.dart';
+
+part 'score_provider.g.dart';
+
+@riverpod
+ScoreResult scoreResult(ScoreResultRef ref) {
+  final father = ref.watch(fatherProfileProvider);
+  final mother = ref.watch(motherProfileProvider);
+  final family = ref.watch(familyProfileProvider);
+  final municipality = ref.watch(selectedMunicipalityProvider);
+
+  final rule = ScoringRuleFactory.of(municipality);
+  final fullFamily = family.copyWith(father: father, mother: mother);
+
+  return ScoreResult(
+    municipalityName: rule.municipalityName,
+    fiscalYear: rule.fiscalYear,
+    fatherBase: rule.calcBaseScore(father),
+    motherBase: rule.calcBaseScore(mother),
+    adjustScore: rule.calcAdjustScore(fullFamily),
+    total: rule.calcTotalScore(fullFamily),
+  );
+}
+```
+
+### ビルド手順
+
+```bash
+dart run build_runner build --delete-conflicting-outputs
+# 継続的に生成する場合
+dart run build_runner watch --delete-conflicting-outputs
+```

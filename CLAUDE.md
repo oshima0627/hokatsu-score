@@ -32,21 +32,25 @@
 | 項目         | 採用技術                                        |
 |------------|---------------------------------------------|
 | フレームワーク    | Flutter（Dart）                               |
+| Flutter SDK | 3.27 以上（google_mobile_ads 8.x の要件）          |
+| Dart SDK    | 3.6 以上                                      |
 | 広告         | google_mobile_ads（AdMob）                    |
-| 状態管理       | Riverpod（flutter_riverpod）                  |
+| 状態管理       | Riverpod 3.x（flutter_riverpod + riverpod_generator）|
 | ローカル保存     | flutter_secure_storage（暗号化）                 |
 | ターゲット      | Android（Google Play）                        |
-| minSdk     | API 23（Android 6.0）※`flutter_secure_storage` 安定動作要件 |
-| targetSdk  | API 36（Android 16）※Google Play提出必須          |
+| minSdk     | API 23（Android 6.0）※`flutter_secure_storage` 要件 |
+| targetSdk  | API 36（Android 16）                          |
 | compileSdk | API 36                                      |
 
-> ⚠️ Google Playは2025年8月31日以降、新規アプリにtargetSdk 35必須、
-> 2026年8月31日以降はtargetSdk 36必須となる予定。
-> 本プロジェクトは2026年4月時点の新規開発のため、最初から `targetSdk 36` を採用する。
-> `android/app/build.gradle` に明示すること。最新要件は事前にGoogle Play公式を確認のこと。
+### SDK要件の根拠（2026年4月時点）
 
-> ⚠️ `minSdk 23` は `flutter_secure_storage` の Android Keystore 連携が
-> API 23以上で安定動作するため。API 21–22 を切り捨てる方針。
+- **targetSdk 35**：2025年8月31日以降、Google Play の新規アプリに必須（**確定**）。
+- **targetSdk 36**：2026年8月31日以降に必須化される可能性が**濃厚**（Googleの毎年のパターンから予測）。
+  ただし **Google Play 公式文書に明記されている確定要件ではない**（2026年4月時点）。
+  本プロジェクトは将来の要件先取りと安全マージンのため最初から `targetSdk 36` を採用。
+  最新要件は Google Play 公式で定期的に確認すること。
+- **minSdk 23**：`flutter_secure_storage 10.x` が Android Keystore 連携のため API 23 以上を要求。
+  API 21–22 を切り捨てる方針。
 
 -----
 
@@ -77,22 +81,34 @@
 ## pubspec.yaml（主要依存）
 
 ```yaml
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
 dependencies:
   flutter:
     sdk: flutter
-  flutter_riverpod: ^2.5.1
-  google_mobile_ads: ^5.1.0
-  flutter_secure_storage: ^9.2.2   # 要配慮個人情報の暗号化保存
-  share_plus: ^10.0.0
+  flutter_riverpod: ^3.3.1          # Riverpod 3系
+  riverpod_annotation: ^3.3.1
+  google_mobile_ads: ^8.0.0
+  flutter_secure_storage: ^10.0.0   # 要配慮個人情報の暗号化保存（minSdk 23要件）
+  share_plus: ^13.0.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
+  flutter_lints: ^6.0.0
+  build_runner: ^2.4.13
+  riverpod_generator: ^3.3.1
+  custom_lint: ^0.7.0
+  riverpod_lint: ^3.3.1
 ```
 
 > ⚠️ `shared_preferences` は要配慮個人情報を平文で保存してしまうため使用しない。
 > 軽微な UI 設定（最後に選んだ自治体ID等）に限り `shared_preferences` を併用することは可。
+
+> ⚠️ バージョンは2026年4月時点の最新安定版を基準とする。
+> CI などで定期的に `flutter pub outdated` を実行し、メジャーバージョン更新時は移行ガイドを確認すること。
 
 -----
 

@@ -6,10 +6,24 @@
 ## 参照
 
 - 那覇市「令和8年度 保育所入所選考基準表」
-- URL: https://www.city.naha.okinawa.jp/_res/projects/default_project/_page_/001/002/785/r8kijunnhyo.pdf
+- 案内ページ: https://www.city.naha.okinawa.jp/child/hoikuen/ninteikodomoen/R6hoikuen_moushikomi.html
+  （ページURLは `R6` だが内容は令和8年度。那覇市のCMS仕様）
+- 基準表PDF: https://www.city.naha.okinawa.jp/_res/projects/default_project/_page_/001/002/785/r8kijunnhyo.pdf
+- ボーダー点PDF（v2参考）: https://www.city.naha.okinawa.jp/_res/projects/default_project/_page_/001/002/785/r7border.pdf
 - 対象年度: 令和8年度
 
-> ⚠️ 実URLは事前に必ず公式サイトで確認すること。
+### 検証ステータス
+
+| 項目        | 値                           |
+|-----------|-----------------------------|
+| PDF 取得日   | **未実施**（実装着手時に取得・記入）        |
+| PDF 更新日   | **未確認**                     |
+| 配点突合チェック  | **未実施**（本ドキュメントの配点は参考値） |
+| 問合せ先      | 那覇市こどもみらい課 TEL 098-861-6903 |
+
+> ⚠️ 本ドキュメントの配点は過去の公開情報に基づく参考値。
+> 実装着手前に最新PDFを取得し、上記検証ステータスを更新してから実装すること。
+> 年度更新時も同様のフローで再検証すること。
 
 ## 基本指数
 
@@ -62,6 +76,8 @@
 | 65歳未満の近居祖父母が保育可能  | −3   |                  |
 | 希望園入れない場合に育休延長許容  | −500 | 実質辞退             |
 | 保育料の滞納あり          | −20  |                  |
+
+> ⚠️ 上記はすべて**参考値**。実装着手時に最新PDFで全項目を突合し、検証ステータスを更新すること。
 
 ## 実装例（`scoring/naha_city.dart`）
 
