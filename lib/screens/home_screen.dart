@@ -6,6 +6,7 @@ import '../providers/municipality_provider.dart';
 import '../providers/parent_provider.dart';
 import '../scoring/municipality.dart';
 import '../scoring/scoring_rule_factory.dart';
+import '../storage/secure_storage.dart';
 import 'parent_input_screen.dart';
 import 'settings_screen.dart';
 
@@ -33,7 +34,6 @@ class HomeScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          // 免責文言
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -44,7 +44,6 @@ class HomeScreen extends ConsumerWidget {
             ),
           ),
 
-          // 自治体リスト
           Expanded(
             child: ListView.separated(
               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -52,7 +51,7 @@ class HomeScreen extends ConsumerWidget {
               separatorBuilder: (_, __) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final municipality = Municipality.values[index];
-                final isImplemented = _isImplemented(municipality);
+                final rule = ScoringRuleFactory.of(municipality);
                 final isSelected = municipality == selected;
 
                 return ListTile(
@@ -63,29 +62,13 @@ class HomeScreen extends ConsumerWidget {
                         : null,
                   ),
                   title: Text(municipality.displayName),
-                  subtitle: isImplemented
-                      ? Text(
-                          ScoringRuleFactory.of(municipality).fiscalYear,
-                          style: Theme.of(context).textTheme.bodySmall,
-                        )
-                      : Text(
-                          '準備中',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onSurfaceVariant,
-                              ),
-                        ),
-                  trailing:
-                      isImplemented ? const Icon(Icons.chevron_right) : null,
-                  enabled: isImplemented,
+                  subtitle: Text(
+                    rule.fiscalYear,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
                   selected: isSelected,
-                  onTap: isImplemented
-                      ? () => _onMunicipalityTap(context, ref, municipality)
-                      : null,
+                  onTap: () => _onMunicipalityTap(context, ref, municipality),
                 );
               },
             ),
@@ -95,15 +78,6 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  bool _isImplemented(Municipality municipality) {
-    try {
-      ScoringRuleFactory.of(municipality);
-      return true;
-    } on UnimplementedError {
-      return false;
-    }
-  }
-
   void _onMunicipalityTap(
     BuildContext context,
     WidgetRef ref,
@@ -111,10 +85,10 @@ class HomeScreen extends ConsumerWidget {
   ) {
     ref.read(selectedMunicipalityProvider.notifier).select(municipality);
 
-    // 入力状態をリセット
     ref.read(fatherProfileProvider.notifier).reset();
     ref.read(motherProfileProvider.notifier).reset();
     ref.read(familyProfileProvider.notifier).reset();
+    SecureStorage.deleteAll();
 
     Navigator.push(
       context,

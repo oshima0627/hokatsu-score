@@ -22,16 +22,60 @@ class ParentInputScreen extends ConsumerStatefulWidget {
 class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
   final _hoursController = TextEditingController();
 
-  NotifierProvider<dynamic, ParentProfile> get _provider =>
-      widget.isFather ? fatherProfileProvider : motherProfileProvider;
-
   String get _title => widget.isFather ? '父の情報' : '母の情報';
+
+  ParentProfile _watchProfile() {
+    return widget.isFather
+        ? ref.watch(fatherProfileProvider)
+        : ref.watch(motherProfileProvider);
+  }
+
+  void _updateWorkStatus(WorkStatus value) {
+    if (widget.isFather) {
+      ref.read(fatherProfileProvider.notifier).updateWorkStatus(value);
+    } else {
+      ref.read(motherProfileProvider.notifier).updateWorkStatus(value);
+    }
+  }
+
+  void _updateMonthlyWorkHours(int hours) {
+    if (widget.isFather) {
+      ref.read(fatherProfileProvider.notifier).updateMonthlyWorkHours(hours);
+    } else {
+      ref.read(motherProfileProvider.notifier).updateMonthlyWorkHours(hours);
+    }
+  }
+
+  void _updateDisabilityGrade(DisabilityGrade grade) {
+    if (widget.isFather) {
+      ref.read(fatherProfileProvider.notifier).updateDisabilityGrade(grade);
+    } else {
+      ref.read(motherProfileProvider.notifier).updateDisabilityGrade(grade);
+    }
+  }
+
+  void _updateCareLevel(CareLevel level) {
+    if (widget.isFather) {
+      ref.read(fatherProfileProvider.notifier).updateCareLevel(level);
+    } else {
+      ref.read(motherProfileProvider.notifier).updateCareLevel(level);
+    }
+  }
+
+  void _updateIsLeaveTarget(bool value) {
+    if (widget.isFather) {
+      ref.read(fatherProfileProvider.notifier).updateIsLeaveTarget(value);
+    } else {
+      ref.read(motherProfileProvider.notifier).updateIsLeaveTarget(value);
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // 既存値があれば反映
-    final current = ref.read(_provider);
+    final current = widget.isFather
+        ? ref.read(fatherProfileProvider)
+        : ref.read(motherProfileProvider);
     if (current.monthlyWorkHours > 0) {
       _hoursController.text = current.monthlyWorkHours.toString();
     }
@@ -43,24 +87,21 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
     super.dispose();
   }
 
-  dynamic get _notifier => widget.isFather
-      ? ref.read(fatherProfileProvider.notifier)
-      : ref.read(motherProfileProvider.notifier);
-
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(_provider);
+    final profile = _watchProfile();
     final showHoursField = _needsHoursInput(profile.workStatus);
+    final isNotSpecified = profile.workStatus == WorkStatus.notSpecified;
 
     return Scaffold(
       appBar: AppBar(title: Text(_title)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 就労状況
           _SectionLabel('就労状況'),
           DropdownButtonFormField<WorkStatus>(
-            value: profile.workStatus,
+            value: isNotSpecified ? null : profile.workStatus,
+            hint: const Text('就労状況を選択してください'),
             decoration: const InputDecoration(
               labelText: '就労状況を選択',
               border: OutlineInputBorder(),
@@ -73,11 +114,10 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
                     ))
                 .toList(),
             onChanged: (value) {
-              if (value != null) _notifier.updateWorkStatus(value);
+              if (value != null) _updateWorkStatus(value);
             },
           ),
 
-          // 月の就労時間（条件付き表示）
           if (showHoursField) ...[
             const SizedBox(height: 16),
             TextFormField(
@@ -95,14 +135,13 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
               ],
               onChanged: (value) {
                 final hours = int.tryParse(value) ?? 0;
-                _notifier.updateMonthlyWorkHours(hours);
+                _updateMonthlyWorkHours(hours);
               },
             ),
           ],
 
           const SizedBox(height: 24),
 
-          // 障害の有無・等級
           _SectionLabel('障害の有無・等級'),
           DropdownButtonFormField<DisabilityGrade>(
             value: profile.disabilityGrade,
@@ -117,13 +156,12 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
                     ))
                 .toList(),
             onChanged: (value) {
-              if (value != null) _notifier.updateDisabilityGrade(value);
+              if (value != null) _updateDisabilityGrade(value);
             },
           ),
 
           const SizedBox(height: 24),
 
-          // 介護の状況
           _SectionLabel('介護の状況'),
           DropdownButtonFormField<CareLevel>(
             value: profile.careLevel,
@@ -138,22 +176,20 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
                     ))
                 .toList(),
             onChanged: (value) {
-              if (value != null) _notifier.updateCareLevel(value);
+              if (value != null) _updateCareLevel(value);
             },
           ),
 
           const SizedBox(height: 24),
 
-          // 育休対象児との関係
           SwitchListTile(
             title: const Text('育休給付の対象児である'),
             value: profile.isLeaveTarget,
-            onChanged: (value) => _notifier.updateIsLeaveTarget(value),
+            onChanged: (value) => _updateIsLeaveTarget(value),
           ),
 
           const SizedBox(height: 32),
 
-          // 次へボタン
           FilledButton.icon(
             onPressed: _canProceed(profile) ? _onNext : null,
             icon: const Icon(Icons.arrow_forward),
@@ -167,6 +203,7 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
   bool _needsHoursInput(WorkStatus status) {
     return status == WorkStatus.employed ||
         status == WorkStatus.selfEmployedNoProof ||
+        status == WorkStatus.employedProspect ||
         status == WorkStatus.student;
   }
 

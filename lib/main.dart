@@ -2,13 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'ad/ad_manager.dart';
+import 'providers/family_provider.dart';
+import 'providers/parent_provider.dart';
 import 'screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AdManager.initialize();
   AdManager.preloadInterstitial();
-  runApp(const ProviderScope(child: HokatsuScoreApp()));
+
+  final container = ProviderContainer();
+  await container.read(fatherProfileProvider.notifier).loadFromStorage();
+  await container.read(motherProfileProvider.notifier).loadFromStorage();
+  await container.read(familyProfileProvider.notifier).loadFromStorage();
+
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const HokatsuScoreApp(),
+    ),
+  );
 }
 
 class HokatsuScoreApp extends StatefulWidget {
