@@ -10,7 +10,7 @@ import '../storage/secure_storage.dart';
 /// 世帯プロファイル（調整指数の入力項目）
 class FamilyProfileNotifier extends Notifier<FamilyProfile> {
   @override
-  FamilyProfile build() => FamilyProfile.initial();
+  FamilyProfile build() => const FamilyProfile.initial();
 
   Future<void> loadFromStorage() async {
     state = await SecureStorage.loadFamily();
@@ -104,7 +104,7 @@ class FamilyProfileNotifier extends Notifier<FamilyProfile> {
   }
 
   void reset() {
-    state = FamilyProfile.initial();
+    state = const FamilyProfile.initial();
   }
 }
 

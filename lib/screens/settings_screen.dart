@@ -29,10 +29,8 @@ class SettingsScreen extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.privacy_tip_outlined),
             title: const Text('プライバシーポリシー'),
-            trailing: const Icon(Icons.open_in_new, size: 16),
-            onTap: () {
-              // TODO: プライバシーポリシーURLを開く
-            },
+            trailing: const Icon(Icons.chevron_right, size: 16),
+            onTap: () => _showPrivacyPolicy(context),
           ),
 
           // ライセンス
@@ -53,6 +51,27 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icon(Icons.info_outline),
             title: Text('バージョン'),
             subtitle: Text('1.0.0'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const _privacyPolicyUrl =
+      'https://oshima0627.github.io/android-hokatsu-score/privacy-policy/';
+
+  void _showPrivacyPolicy(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AboutDialog(
+        applicationName: 'ホカツスコア',
+        applicationVersion: '1.0.0',
+        children: [
+          const Text('プライバシーポリシーは以下のURLでご確認いただけます。'),
+          const SizedBox(height: 8),
+          SelectableText(
+            _privacyPolicyUrl,
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ],
       ),

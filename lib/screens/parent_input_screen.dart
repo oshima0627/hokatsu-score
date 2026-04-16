@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/care_level.dart';
+import '../widgets/section_header.dart';
 import '../models/disability_grade.dart';
 import '../models/parent_profile.dart';
 import '../models/work_status.dart';
@@ -98,7 +99,7 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SectionLabel('就労状況'),
+          SectionHeader('就労状況'),
           DropdownButtonFormField<WorkStatus>(
             value: isNotSpecified ? null : profile.workStatus,
             hint: const Text('就労状況を選択してください'),
@@ -142,7 +143,7 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
 
           const SizedBox(height: 24),
 
-          _SectionLabel('障害の有無・等級'),
+          SectionHeader('障害の有無・等級'),
           DropdownButtonFormField<DisabilityGrade>(
             value: profile.disabilityGrade,
             decoration: const InputDecoration(
@@ -162,7 +163,7 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
 
           const SizedBox(height: 24),
 
-          _SectionLabel('介護の状況'),
+          SectionHeader('介護の状況'),
           DropdownButtonFormField<CareLevel>(
             value: profile.careLevel,
             decoration: const InputDecoration(
@@ -225,23 +226,5 @@ class _ParentInputScreenState extends ConsumerState<ParentInputScreen> {
         MaterialPageRoute(builder: (_) => const FamilyInputScreen()),
       );
     }
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.text);
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: Theme.of(context).colorScheme.primary,
-            ),
-      ),
-    );
   }
 }

@@ -25,7 +25,7 @@ class FamilyProfile {
   });
 
   /// 初期状態
-  FamilyProfile.initial()
+  const FamilyProfile.initial()
       : father = const ParentProfile.initial(),
         mother = const ParentProfile.initial(),
         isSingleParent = false,

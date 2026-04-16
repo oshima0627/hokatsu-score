@@ -68,7 +68,7 @@ class SecureStorage {
 
   static Future<FamilyProfile> loadFamily() async {
     final raw = await _storage.read(key: _keyFamily);
-    if (raw == null) return FamilyProfile.initial();
+    if (raw == null) return const FamilyProfile.initial();
     return FamilyProfile.fromJson(
       jsonDecode(raw) as Map<String, dynamic>,
     );

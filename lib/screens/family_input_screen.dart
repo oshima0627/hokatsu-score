@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/nursery_worker_type.dart';
 import '../providers/family_provider.dart';
+import '../widgets/section_header.dart';
 import 'result_screen.dart';
 
 /// 世帯状況入力画面（調整指数）
@@ -19,7 +20,7 @@ class FamilyInputScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _SectionHeader('加点項目'),
+          SectionHeader('加点項目'),
 
           SwitchListTile(
             title: const Text('ひとり親世帯'),
@@ -115,7 +116,7 @@ class FamilyInputScreen extends ConsumerWidget {
 
           const Divider(height: 32),
 
-          _SectionHeader('減点項目', isNegative: true),
+          SectionHeader('減点項目', isNegative: true),
 
           SwitchListTile(
             title: const Text('65歳未満の同居者が保育可能'),
@@ -148,27 +149,6 @@ class FamilyInputScreen extends ConsumerWidget {
             label: const Text('スコアを計算する'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.text, {this.isNegative = false});
-  final String text;
-  final bool isNegative;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Text(
-        text,
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: isNegative
-                  ? Theme.of(context).colorScheme.error
-                  : Theme.of(context).colorScheme.primary,
-            ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../ad/ad_manager.dart';
+import '../models/score_result.dart';
 import '../providers/score_provider.dart';
 import '../widgets/ad_banner_widget.dart';
 
@@ -35,9 +36,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
           IconButton(
             icon: const Icon(Icons.share),
             tooltip: '結果をシェア',
-            onPressed: () => _share(result.municipalityName, result.fiscalYear,
-                result.fatherBase, result.motherBase, result.adjustScore,
-                result.total),
+            onPressed: () => _share(result),
           ),
         ],
       ),
@@ -109,13 +108,7 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
             // シェアボタン
             OutlinedButton.icon(
-              onPressed: () => _share(
-                  result.municipalityName,
-                  result.fiscalYear,
-                  result.fatherBase,
-                  result.motherBase,
-                  result.adjustScore,
-                  result.total),
+              onPressed: () => _share(result),
               icon: const Icon(Icons.share),
               label: const Text('結果をシェアする'),
             ),
@@ -153,21 +146,14 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     );
   }
 
-  void _share(
-    String municipalityName,
-    String fiscalYear,
-    int fatherBase,
-    int motherBase,
-    int adjustScore,
-    int total,
-  ) {
+  void _share(ScoreResult result) {
     final text = '''
 【保活スコア計算結果】
-自治体：$municipalityName（${fiscalYear}基準）
-合計指数：${total}点
-\u3000父の基本指数：${fatherBase}点
-\u3000母の基本指数：${motherBase}点
-\u3000調整指数：${adjustScore}点
+自治体：${result.municipalityName}（${result.fiscalYear}基準）
+合計指数：${result.total}点
+\u3000父の基本指数：${result.fatherBase}点
+\u3000母の基本指数：${result.motherBase}点
+\u3000調整指数：${result.adjustScore}点
 
 ※本結果はあくまで目安です。実際の選考結果を保証するものではありません。
 保活スコア計算アプリ'''
