@@ -55,6 +55,37 @@
 | 介護中             | -  | `calcCareScore` で別途算定     |
 | 就学・職業訓練         | -  | 就労時間段階判定と同一               |
 
+### 障害区分別点数
+
+> ⚠️ 以下は一般的な保育指数の障害区分を元にした**暫定構造**。実装着手時に最新PDFで全項目を突合し、配点を確定すること。
+
+| 区分                     | 点数   | 備考                |
+|------------------------|------|-------------------|
+| 身体障害者手帳 1〜2級          | TODO | PDF確認後に記入         |
+| 身体障害者手帳 3級            | TODO | PDF確認後に記入         |
+| 身体障害者手帳 4〜6級          | TODO | PDF確認後に記入         |
+| 精神障害者保健福祉手帳 1級        | TODO | PDF確認後に記入         |
+| 精神障害者保健福祉手帳 2級        | TODO | PDF確認後に記入         |
+| 精神障害者保健福祉手帳 3級        | TODO | PDF確認後に記入         |
+| 療育手帳 A                | TODO | PDF確認後に記入         |
+| 療育手帳 B                | TODO | PDF確認後に記入         |
+| 障害年金 1級               | TODO | PDF確認後に記入         |
+| 障害年金 2級               | TODO | PDF確認後に記入         |
+
+### 介護区分別点数
+
+> ⚠️ 以下は暫定構造。実装着手時に最新PDFで確定すること。
+
+| 区分        | 点数   | 備考                |
+|-----------|------|-------------------|
+| 要介護5     | TODO | PDF確認後に記入         |
+| 要介護4     | TODO | PDF確認後に記入         |
+| 要介護3     | TODO | PDF確認後に記入         |
+| 要介護2     | TODO | PDF確認後に記入         |
+| 要介護1     | TODO | PDF確認後に記入         |
+| 要支援2     | TODO | PDF確認後に記入         |
+| 要支援1     | TODO | PDF確認後に記入         |
+
 ## 調整指数
 
 | 項目                | 点数   | 備考               |
@@ -135,15 +166,36 @@ class NahaCityScoringRule extends ScoringRule {
 
   @override
   int calcDisabilityScore(ParentProfile parent) {
-    // TODO: 公式PDFの障害区分表に従って実装
-    return 0;
+    // TODO: 公式PDFの障害区分表で配点を確定し、数値を埋めること
+    switch (parent.disabilityGrade) {
+      case DisabilityGrade.none:        return 0;
+      case DisabilityGrade.physical1to2: return 0; // TODO: PDF確認
+      case DisabilityGrade.physical3:    return 0; // TODO: PDF確認
+      case DisabilityGrade.physical4to6: return 0; // TODO: PDF確認
+      case DisabilityGrade.mental1:      return 0; // TODO: PDF確認
+      case DisabilityGrade.mental2:      return 0; // TODO: PDF確認
+      case DisabilityGrade.mental3:      return 0; // TODO: PDF確認
+      case DisabilityGrade.nursingA:     return 0; // TODO: PDF確認
+      case DisabilityGrade.nursingB:     return 0; // TODO: PDF確認
+      case DisabilityGrade.pensionA:     return 0; // TODO: PDF確認
+      case DisabilityGrade.pensionB:     return 0; // TODO: PDF確認
+    }
   }
 
   @override
   int calcCareScore(ParentProfile parent) {
-    // TODO: 公式PDFの介護区分表に従って実装
-    // 例: 要介護3以上 + 同居なら高得点 等
-    return 0;
+    // TODO: 公式PDFの介護区分表で配点を確定し、数値を埋めること
+    if (parent.workStatus != WorkStatus.caregiving) return 0;
+    switch (parent.careLevel) {
+      case CareLevel.none:     return 0;
+      case CareLevel.support1: return 0; // TODO: PDF確認
+      case CareLevel.support2: return 0; // TODO: PDF確認
+      case CareLevel.care1:    return 0; // TODO: PDF確認
+      case CareLevel.care2:    return 0; // TODO: PDF確認
+      case CareLevel.care3:    return 0; // TODO: PDF確認
+      case CareLevel.care4:    return 0; // TODO: PDF確認
+      case CareLevel.care5:    return 0; // TODO: PDF確認
+    }
   }
 
   @override
@@ -157,8 +209,14 @@ class NahaCityScoringRule extends ScoringRule {
     score += singleParentBonus;
     if (family.isYoungParent) score += 15;         // 18歳以下出産
     if (family.isOnWelfare) score += 3;
-    if (family.isNurseryWorker) score += 50;        // 市内認可で保育士就労
-    if (family.isChildcareSupporter) score += 20;   // 子育て支援員
+    switch (family.nurseryWorkerType) {               // 市内認可保育所での就労（排他）
+      case NurseryWorkerType.nurseryWorker:
+        score += 50;
+      case NurseryWorkerType.childcareSupporter:
+        score += 20;
+      case NurseryWorkerType.none:
+        break;
+    }
     if (family.returningFromLeave) score += 9;
     if (family.hasDisabilityAndWorks) score += 5;
     if (family.isTransferredAway) score += 5;

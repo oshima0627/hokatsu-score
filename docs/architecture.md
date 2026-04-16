@@ -114,6 +114,16 @@ UI上は10項目に集約し、サブ選択（妊娠の単胎/多胎、療養の
 | `care4`     | 要介護4     |
 | `care5`     | 要介護5     |
 
+### `NurseryWorkerType`（enum）
+
+市内認可保育所での就労区分。保育士と支援員は排他（同時に該当しない）。
+
+| 値                    | 表示名        |
+|----------------------|------------|
+| `none`               | 該当なし       |
+| `nurseryWorker`      | 保育士        |
+| `childcareSupporter` | 子育て支援員     |
+
 ### `Municipality`（enum）
 
 | 値             | 表示名    |
@@ -147,8 +157,7 @@ UI上は10項目に集約し、サブ選択（妊娠の単胎/多胎、療養の
 | `isPseudoSingleParent`         | `bool`         | ひとり親みなし（排他）     |
 | `isYoungParent`                | `bool`         | 18歳以下出産         |
 | `isOnWelfare`                  | `bool`         | 生活保護受給中         |
-| `isNurseryWorker`              | `bool`         | 市内認可で保育士就労      |
-| `isChildcareSupporter`         | `bool`         | 子育て支援員          |
+| `nurseryWorkerType`            | `NurseryWorkerType` | 市内認可保育所での就労区分（排他） |
 | `returningFromLeave`           | `bool`         | 育休から復帰予定        |
 | `hasDisabilityAndWorks`        | `bool`         | 手帳保持＋就労中        |
 | `isTransferredAway`            | `bool`         | 単身赴任            |
@@ -315,3 +324,26 @@ dart run build_runner build --delete-conflicting-outputs
 # 継続的に生成する場合
 dart run build_runner watch --delete-conflicting-outputs
 ```
+
+-----
+
+## モデルの直列化（flutter_secure_storage 連携）
+
+`flutter_secure_storage` は key-value（String）ストアのため、モデルを JSON 文字列に変換して保存する。
+
+### 方針
+
+- `ParentProfile` / `FamilyProfile` は **`dart:convert`（`jsonEncode` / `jsonDecode`）** で直列化する
+- 各モデルに `toJson()` / `fromJson()` メソッドを手書きする（MVP 規模では `json_serializable` の導入コストに見合わない）
+- 将来フィールドが増えて保守が困難になった場合に `freezed` + `json_serializable` への移行を検討する
+
+### ストレージキー
+
+| キー                     | 値                                | 備考           |
+|------------------------|----------------------------------|--------------|
+| `father_profile`       | `ParentProfile` の JSON 文字列       | 父の入力値        |
+| `mother_profile`       | `ParentProfile` の JSON 文字列       | 母の入力値        |
+| `family_profile`       | `FamilyProfile` の JSON 文字列（父母除く）| 世帯調整指数の入力値   |
+| `selected_municipality`| `Municipality` enum の `name`     | 最後に選択した自治体   |
+
+> ⚠️ `selected_municipality` は要配慮個人情報ではないため `shared_preferences` での保存も可。

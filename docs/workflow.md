@@ -2,6 +2,33 @@
 
 > 親ドキュメント：[../CLAUDE.md](../CLAUDE.md)
 
+## 開発環境セットアップ
+
+```bash
+# 1. リポジトリをクローン
+git clone <repo-url> && cd hokatsu-score
+
+# 2. Flutter SDK の確認（3.27 以上）
+flutter --version
+
+# 3. 依存パッケージの取得
+flutter pub get
+
+# 4. コード生成（Riverpod + riverpod_generator）
+dart run build_runner build --delete-conflicting-outputs
+
+# 5. テスト実行
+flutter test
+
+# 6. 静的解析
+flutter analyze
+```
+
+> ⚠️ コード生成後のファイル（`*.g.dart`）は Git にコミットする方針。
+> CI やビルド時の `build_runner` 実行を不要にするため。
+
+-----
+
 ## ブランチ運用
 
 - 作業ブランチ命名規約：`claude/<topic>-<shortid>`
