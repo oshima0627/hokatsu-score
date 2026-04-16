@@ -1,0 +1,77 @@
+import 'care_level.dart';
+import 'disability_grade.dart';
+import 'work_status.dart';
+
+/// 保護者（父または母）の個人プロファイル
+class ParentProfile {
+  const ParentProfile({
+    this.workStatus = WorkStatus.notSpecified,
+    this.monthlyWorkHours = 0,
+    this.disabilityGrade = DisabilityGrade.none,
+    this.careLevel = CareLevel.none,
+    this.isLeaveTarget = false,
+  });
+
+  /// 初期状態
+  const ParentProfile.initial()
+      : workStatus = WorkStatus.notSpecified,
+        monthlyWorkHours = 0,
+        disabilityGrade = DisabilityGrade.none,
+        careLevel = CareLevel.none,
+        isLeaveTarget = false;
+
+  /// 就労状況
+  final WorkStatus workStatus;
+
+  /// 月の就労時間（0〜999）
+  final int monthlyWorkHours;
+
+  /// 障害等級
+  final DisabilityGrade disabilityGrade;
+
+  /// 介護の要介護・要支援度
+  final CareLevel careLevel;
+
+  /// 育休対象児との関係（育休給付対象か）
+  final bool isLeaveTarget;
+
+  Map<String, dynamic> toJson() => {
+        'workStatus': workStatus.name,
+        'monthlyWorkHours': monthlyWorkHours,
+        'disabilityGrade': disabilityGrade.name,
+        'careLevel': careLevel.name,
+        'isLeaveTarget': isLeaveTarget,
+      };
+
+  factory ParentProfile.fromJson(Map<String, dynamic> json) {
+    return ParentProfile(
+      workStatus: WorkStatus.values.byName(
+        json['workStatus'] as String? ?? WorkStatus.notSpecified.name,
+      ),
+      monthlyWorkHours: json['monthlyWorkHours'] as int? ?? 0,
+      disabilityGrade: DisabilityGrade.values.byName(
+        json['disabilityGrade'] as String? ?? DisabilityGrade.none.name,
+      ),
+      careLevel: CareLevel.values.byName(
+        json['careLevel'] as String? ?? CareLevel.none.name,
+      ),
+      isLeaveTarget: json['isLeaveTarget'] as bool? ?? false,
+    );
+  }
+
+  ParentProfile copyWith({
+    WorkStatus? workStatus,
+    int? monthlyWorkHours,
+    DisabilityGrade? disabilityGrade,
+    CareLevel? careLevel,
+    bool? isLeaveTarget,
+  }) {
+    return ParentProfile(
+      workStatus: workStatus ?? this.workStatus,
+      monthlyWorkHours: monthlyWorkHours ?? this.monthlyWorkHours,
+      disabilityGrade: disabilityGrade ?? this.disabilityGrade,
+      careLevel: careLevel ?? this.careLevel,
+      isLeaveTarget: isLeaveTarget ?? this.isLeaveTarget,
+    );
+  }
+}
