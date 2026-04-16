@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'screens/home_screen.dart';
+
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const ProviderScope(child: HokatsuScoreApp()));
@@ -14,12 +16,10 @@ class HokatsuScoreApp extends StatelessWidget {
     return MaterialApp(
       title: 'ホカツスコア',
       theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF00BCD4), // Okinawan turquoise
+        colorSchemeSeed: const Color(0xFF00BCD4),
         useMaterial3: true,
       ),
-      home: const Scaffold(
-        body: Center(child: Text('ホカツスコア')),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
