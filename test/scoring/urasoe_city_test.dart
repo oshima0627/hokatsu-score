@@ -62,9 +62,13 @@ void main() {
   // ===========================================================================
 
   group('calcWorkScore - 固定値', () {
-    test('妊娠 → 20点', () {
+    test('妊娠（単胎） → 12点', () {
       expect(rule.calcWorkScore(
-          const ParentProfile(workStatus: WorkStatus.pregnant)), 20);
+          const ParentProfile(workStatus: WorkStatus.pregnant)), 12);
+    });
+    test('妊娠（多胎） → 18点', () {
+      expect(rule.calcWorkScore(
+          const ParentProfile(workStatus: WorkStatus.pregnantMultiple)), 18);
     });
     test('入院 → 20点', () {
       expect(rule.calcWorkScore(const ParentProfile(
@@ -78,9 +82,9 @@ void main() {
       expect(rule.calcWorkScore(const ParentProfile(
           workStatus: WorkStatus.medicalTreatmentMild)), 14);
     });
-    test('求職中 → 3点', () {
+    test('求職中 → 8点', () {
       expect(rule.calcWorkScore(
-          const ParentProfile(workStatus: WorkStatus.jobSeeking)), 3);
+          const ParentProfile(workStatus: WorkStatus.jobSeeking)), 8);
     });
     test('育休中 → 8点', () {
       expect(rule.calcWorkScore(
@@ -171,15 +175,11 @@ void main() {
     test('生活保護 → +3点', () {
       expect(rule.calcAdjustScore(_family(isOnWelfare: true)), 3);
     });
-    test('保育士 → +12点', () {
-      expect(rule.calcAdjustScore(
-          _family(nurseryWorkerType: NurseryWorkerType.nurseryWorker)), 12);
+    test('育休復帰 → +1点', () {
+      expect(rule.calcAdjustScore(_family(returningFromLeave: true)), 1);
     });
-    test('育休復帰 → +8点', () {
-      expect(rule.calcAdjustScore(_family(returningFromLeave: true)), 8);
-    });
-    test('認可外利用 → +5点', () {
-      expect(rule.calcAdjustScore(_family(isUsingNinkagai: true)), 5);
+    test('認可外利用 → +1点', () {
+      expect(rule.calcAdjustScore(_family(isUsingNinkagai: true)), 1);
     });
     test('地域型卒園 → +300点', () {
       expect(rule.calcAdjustScore(
@@ -214,6 +214,7 @@ void main() {
       final result = rule.calcResult(family);
       expect(result.fatherBase, 20);
       expect(result.motherBase, 16);
+      // ひとり親(26) + きょうだい(3) = 29
       expect(result.adjustScore, 29);
       expect(result.total, 65);
     });

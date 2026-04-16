@@ -38,9 +38,9 @@ class UrasoeCityScoringRule extends ScoringRule {
         // 浦添市の基準表に明示なし。求職活動に準じて3点とする。
         return 3;
       case WorkStatus.pregnant:
-        return 20;
+        return 12;
       case WorkStatus.pregnantMultiple:
-        return 20;
+        return 18;
       case WorkStatus.hospitalizedBedridden:
         return 20;
       case WorkStatus.medicalTreatmentSerious:
@@ -52,7 +52,7 @@ class UrasoeCityScoringRule extends ScoringRule {
       case WorkStatus.student:
         return _scoreByHours(parent.monthlyWorkHours);
       case WorkStatus.jobSeeking:
-        return 3;
+        return 8;
       case WorkStatus.parentalLeave:
         return 8;
       case WorkStatus.pseudoParentalLeave:
@@ -164,21 +164,16 @@ class UrasoeCityScoringRule extends ScoringRule {
 
     if (family.isOnWelfare) score += 3;
 
-    // 保育士（浦添市: +12）
-    switch (family.nurseryWorkerType) {
-      case NurseryWorkerType.nurseryWorker:
-        score += 12;
-      case NurseryWorkerType.childcareSupporter:
-        score += 12;
-      case NurseryWorkerType.none:
-        break;
-    }
+    // 保育士（浦添市: PDFでは「適宜」のため数値化困難。暫定0）
+    // nurseryWorkerType は加点せず、同点時の優先順位で考慮される
 
-    if (family.returningFromLeave) score += 8;
+    if (family.returningFromLeave) score += 1;
     if (family.isTransferredAway) score += 3;
-    if (family.isUsingNinkagai) score += 5;
+    if (family.isUsingNinkagai) score += 1;
     if (family.siblingAtFirstChoiceNursery) score += 3;
     if (family.twoSiblingsApplyingSameNursery) score += 1;
+    // 地域型卒園: 連携施設→450, 連携外→300
+    // モデルでは連携施設/外の区別がないため連携外300を適用
     if (family.isGraduatingFromSmallNursery) score += 300;
 
     // 減点項目

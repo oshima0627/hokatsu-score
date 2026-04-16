@@ -160,7 +160,8 @@ class TomigusukuCityScoringRule extends ScoringRule {
         break;
     }
 
-    if (family.returningFromLeave) score += 2;
+    // 育休復帰: PDF 2歳児+3, 1歳児+2。区別できないため+3を適用
+    if (family.returningFromLeave) score += 3;
     if (family.isTransferredAway) score += 1;
     if (family.isUsingNinkagai) score += 3;
     if (family.siblingAtFirstChoiceNursery) score += 11;

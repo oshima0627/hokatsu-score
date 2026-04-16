@@ -43,7 +43,8 @@ class HaebaruTownScoringRule extends ScoringRule {
       case WorkStatus.hospitalizedBedridden:
         return 10;
       case WorkStatus.medicalTreatmentSerious:
-        return 8;
+        // PDF: 常時病床/精神疾患→10, 常時安静→8
+        return 10;
       case WorkStatus.medicalTreatmentMild:
         return 6;
       case WorkStatus.caregiving:

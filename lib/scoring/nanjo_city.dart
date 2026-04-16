@@ -59,9 +59,10 @@ class NanjoCityScoringRule extends ScoringRule {
       case WorkStatus.jobSeeking:
         return 10;
       case WorkStatus.parentalLeave:
-        return 15;
+        // PDFでは育休は基本指数なし（調整指数+1のみ）
+        return 0;
       case WorkStatus.pseudoParentalLeave:
-        return 15;
+        return 0;
       case WorkStatus.notSpecified:
         return 0;
     }

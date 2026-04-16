@@ -40,9 +40,9 @@ class YonabaruTownScoringRule extends ScoringRule {
       case WorkStatus.employedProspect:
         return 3; // 求職中と同等
       case WorkStatus.pregnant:
-        return 10;
+        return 8;
       case WorkStatus.pregnantMultiple:
-        return 10;
+        return 8;
       case WorkStatus.hospitalizedBedridden:
         return 10;
       case WorkStatus.medicalTreatmentSerious:
