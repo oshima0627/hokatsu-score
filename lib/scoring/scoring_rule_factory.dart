@@ -13,24 +13,28 @@ import 'yonabaru_town.dart';
 class ScoringRuleFactory {
   ScoringRuleFactory._();
 
+  static final _cache = <Municipality, ScoringRule>{};
+
   static ScoringRule of(Municipality municipality) {
-    switch (municipality) {
-      case Municipality.naha:
-        return NahaCityScoringRule();
-      case Municipality.urasoe:
-        return UrasoeCityScoringRule();
-      case Municipality.tomigusuku:
-        return TomigusukuCityScoringRule();
-      case Municipality.itoman:
-        return ItomanCityScoringRule();
-      case Municipality.nanjo:
-        return NanjoCityScoringRule();
-      case Municipality.haebaru:
-        return HaebaruTownScoringRule();
-      case Municipality.yonabaru:
-        return YonabaruTownScoringRule();
-      case Municipality.yaese:
-        return YaeseTownScoringRule();
-    }
+    return _cache.putIfAbsent(municipality, () {
+      switch (municipality) {
+        case Municipality.naha:
+          return NahaCityScoringRule();
+        case Municipality.urasoe:
+          return UrasoeCityScoringRule();
+        case Municipality.tomigusuku:
+          return TomigusukuCityScoringRule();
+        case Municipality.itoman:
+          return ItomanCityScoringRule();
+        case Municipality.nanjo:
+          return NanjoCityScoringRule();
+        case Municipality.haebaru:
+          return HaebaruTownScoringRule();
+        case Municipality.yonabaru:
+          return YonabaruTownScoringRule();
+        case Municipality.yaese:
+          return YaeseTownScoringRule();
+      }
+    });
   }
 }

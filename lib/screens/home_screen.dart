@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -68,7 +70,8 @@ class HomeScreen extends ConsumerWidget {
                   ),
                   trailing: const Icon(Icons.chevron_right),
                   selected: isSelected,
-                  onTap: () => _onMunicipalityTap(context, ref, municipality),
+                  onTap: () => _onMunicipalityTap(
+                      context, ref, municipality, selected),
                 );
               },
             ),
@@ -82,19 +85,51 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Municipality municipality,
+    Municipality currentlySelected,
   ) {
     ref.read(selectedMunicipalityProvider.notifier).select(municipality);
 
-    ref.read(fatherProfileProvider.notifier).reset();
-    ref.read(motherProfileProvider.notifier).reset();
-    ref.read(familyProfileProvider.notifier).reset();
-    SecureStorage.deleteAll();
+    if (municipality == currentlySelected) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ParentInputScreen(isFather: true),
+        ),
+      );
+      return;
+    }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const ParentInputScreen(isFather: true),
+    showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('自治体を変更'),
+        content: Text(
+          '${municipality.displayName}に切り替えます。\n入力中のデータはリセットされます。',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('キャンセル'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('切り替える'),
+          ),
+        ],
       ),
-    );
+    ).then((confirmed) {
+      if (confirmed != true) return;
+      ref.read(fatherProfileProvider.notifier).reset();
+      ref.read(motherProfileProvider.notifier).reset();
+      ref.read(familyProfileProvider.notifier).reset();
+      unawaited(SecureStorage.deleteAll());
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ParentInputScreen(isFather: true),
+        ),
+      );
+    });
   }
 }

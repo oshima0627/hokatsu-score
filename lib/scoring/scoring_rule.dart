@@ -57,7 +57,6 @@ abstract class ScoringRule {
       fatherBase: calcBaseScore(family.father),
       motherBase: calcBaseScore(family.mother),
       adjustScore: calcAdjustScore(family),
-      total: calcTotalScore(family),
     );
   }
 }

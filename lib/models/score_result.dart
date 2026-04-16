@@ -6,7 +6,6 @@ class ScoreResult {
     required this.fatherBase,
     required this.motherBase,
     required this.adjustScore,
-    required this.total,
   });
 
   /// 自治体名
@@ -24,8 +23,8 @@ class ScoreResult {
   /// 調整指数
   final int adjustScore;
 
-  /// 合計指数
-  final int total;
+  /// 合計指数（算出値）
+  int get total => fatherBase + motherBase + adjustScore;
 
   @override
   bool operator ==(Object other) =>
@@ -36,8 +35,7 @@ class ScoreResult {
           fiscalYear == other.fiscalYear &&
           fatherBase == other.fatherBase &&
           motherBase == other.motherBase &&
-          adjustScore == other.adjustScore &&
-          total == other.total;
+          adjustScore == other.adjustScore;
 
   @override
   int get hashCode => Object.hash(
@@ -46,6 +44,5 @@ class ScoreResult {
         fatherBase,
         motherBase,
         adjustScore,
-        total,
       );
 }

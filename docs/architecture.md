@@ -247,21 +247,18 @@ class ScoringRuleFactory {
 
 -----
 
-## 状態管理（Riverpod 3.x + code generation）
+## 状態管理（Riverpod 3.x 手動 Notifier 方式）
 
-Riverpod 3系では `@riverpod` アノテーションと `riverpod_generator` によるコード生成が推奨される。
-2系の `StateNotifierProvider` 記法は廃止方向。
+Riverpod 3系の `Notifier` + `NotifierProvider` を使用する。
+コード生成（`riverpod_generator`）は使用しない。
 
 ### Notifier 例（`providers/parent_provider.dart`）
 
 ```dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/parent_profile.dart';
 
-part 'parent_provider.g.dart';
-
-@riverpod
-class FatherProfile extends _$FatherProfile {
+class FatherProfileNotifier extends Notifier<ParentProfile> {
   @override
   ParentProfile build() => const ParentProfile.initial();
 
@@ -275,53 +272,30 @@ class FatherProfile extends _$FatherProfile {
   // ...
 }
 
-@riverpod
-class MotherProfile extends _$MotherProfile {
-  @override
-  ParentProfile build() => const ParentProfile.initial();
-  // ...
-}
+final fatherProfileProvider =
+    NotifierProvider<FatherProfileNotifier, ParentProfile>(
+  FatherProfileNotifier.new,
+);
 ```
 
 ### 集約 Provider 例（`providers/score_provider.dart`）
 
 ```dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/score_result.dart';
 import '../scoring/scoring_rule_factory.dart';
-import 'family_provider.dart';
-import 'municipality_provider.dart';
-import 'parent_provider.dart';
 
-part 'score_provider.g.dart';
-
-@riverpod
-ScoreResult scoreResult(ScoreResultRef ref) {
+final scoreResultProvider = Provider<ScoreResult>((ref) {
   final father = ref.watch(fatherProfileProvider);
   final mother = ref.watch(motherProfileProvider);
-  final family = ref.watch(familyProfileProvider);
+  final familyBase = ref.watch(familyProfileProvider);
   final municipality = ref.watch(selectedMunicipalityProvider);
 
   final rule = ScoringRuleFactory.of(municipality);
-  final fullFamily = family.copyWith(father: father, mother: mother);
+  final family = familyBase.copyWith(father: father, mother: mother);
 
-  return ScoreResult(
-    municipalityName: rule.municipalityName,
-    fiscalYear: rule.fiscalYear,
-    fatherBase: rule.calcBaseScore(father),
-    motherBase: rule.calcBaseScore(mother),
-    adjustScore: rule.calcAdjustScore(fullFamily),
-    total: rule.calcTotalScore(fullFamily),
-  );
-}
-```
-
-### ビルド手順
-
-```bash
-dart run build_runner build --delete-conflicting-outputs
-# 継続的に生成する場合
-dart run build_runner watch --delete-conflicting-outputs
+  return rule.calcResult(family);
+});
 ```
 
 -----

@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -24,7 +23,7 @@ class FatherProfileNotifier extends Notifier<ParentProfile> {
   }
 
   void updateMonthlyWorkHours(int hours) {
-    state = state.copyWith(monthlyWorkHours: math.min(hours.clamp(0, 744), 744));
+    state = state.copyWith(monthlyWorkHours: hours.clamp(0, 744));
     unawaited(SecureStorage.saveFather(state));
   }
 
@@ -68,7 +67,7 @@ class MotherProfileNotifier extends Notifier<ParentProfile> {
   }
 
   void updateMonthlyWorkHours(int hours) {
-    state = state.copyWith(monthlyWorkHours: math.min(hours.clamp(0, 744), 744));
+    state = state.copyWith(monthlyWorkHours: hours.clamp(0, 744));
     unawaited(SecureStorage.saveMother(state));
   }
 
