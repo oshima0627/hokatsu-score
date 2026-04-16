@@ -2,14 +2,28 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../ad/ad_manager.dart';
 import '../providers/score_provider.dart';
+import '../widgets/ad_banner_widget.dart';
 
 /// 結果表示画面
-class ResultScreen extends ConsumerWidget {
+class ResultScreen extends ConsumerStatefulWidget {
   const ResultScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends ConsumerState<ResultScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // 結果画面表示前にインタースティシャル広告を表示（1セッション1回）
+    AdManager.showInterstitialIfReady();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final result = ref.watch(scoreResultProvider);
     final theme = Theme.of(context);
 
@@ -129,6 +143,9 @@ class ResultScreen extends ConsumerWidget {
                   Navigator.of(context).popUntil((route) => route.isFirst),
               child: const Text('ホームに戻る'),
             ),
+
+            // バナー広告
+            const AdBannerWidget(),
           ],
         ),
       ),

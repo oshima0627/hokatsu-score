@@ -35,6 +35,30 @@ class ParentProfile {
   /// 育休対象児との関係（育休給付対象か）
   final bool isLeaveTarget;
 
+  Map<String, dynamic> toJson() => {
+        'workStatus': workStatus.name,
+        'monthlyWorkHours': monthlyWorkHours,
+        'disabilityGrade': disabilityGrade.name,
+        'careLevel': careLevel.name,
+        'isLeaveTarget': isLeaveTarget,
+      };
+
+  factory ParentProfile.fromJson(Map<String, dynamic> json) {
+    return ParentProfile(
+      workStatus: WorkStatus.values.byName(
+        json['workStatus'] as String? ?? WorkStatus.notSpecified.name,
+      ),
+      monthlyWorkHours: json['monthlyWorkHours'] as int? ?? 0,
+      disabilityGrade: DisabilityGrade.values.byName(
+        json['disabilityGrade'] as String? ?? DisabilityGrade.none.name,
+      ),
+      careLevel: CareLevel.values.byName(
+        json['careLevel'] as String? ?? CareLevel.none.name,
+      ),
+      isLeaveTarget: json['isLeaveTarget'] as bool? ?? false,
+    );
+  }
+
   ParentProfile copyWith({
     WorkStatus? workStatus,
     int? monthlyWorkHours,

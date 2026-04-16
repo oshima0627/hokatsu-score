@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/family_provider.dart';
 import '../providers/parent_provider.dart';
+import '../storage/secure_storage.dart';
 
 /// 設定画面
 class SettingsScreen extends ConsumerWidget {
@@ -70,15 +71,17 @@ class SettingsScreen extends ConsumerWidget {
             child: const Text('キャンセル'),
           ),
           FilledButton(
-            onPressed: () {
+            onPressed: () async {
               ref.read(fatherProfileProvider.notifier).reset();
               ref.read(motherProfileProvider.notifier).reset();
               ref.read(familyProfileProvider.notifier).reset();
-              // TODO: flutter_secure_storage のデータも削除
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('データを削除しました')),
-              );
+              await SecureStorage.deleteAll();
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('データを削除しました')),
+                );
+              }
             },
             child: const Text('削除する'),
           ),

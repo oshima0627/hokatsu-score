@@ -99,6 +99,56 @@ class FamilyProfile {
   /// 保育料の滞納あり（減点）
   final bool hasUnpaidFees;
 
+  /// JSON シリアライズ（父母プロファイルは含まない）
+  Map<String, dynamic> toJson() => {
+        'isSingleParent': isSingleParent,
+        'isPseudoSingleParent': isPseudoSingleParent,
+        'isYoungParent': isYoungParent,
+        'isOnWelfare': isOnWelfare,
+        'nurseryWorkerType': nurseryWorkerType.name,
+        'returningFromLeave': returningFromLeave,
+        'hasDisabilityAndWorks': hasDisabilityAndWorks,
+        'isTransferredAway': isTransferredAway,
+        'isUsingNinkagai': isUsingNinkagai,
+        'siblingAtFirstChoiceNursery': siblingAtFirstChoiceNursery,
+        'twoSiblingsApplyingSameNursery': twoSiblingsApplyingSameNursery,
+        'siblingHasDisability': siblingHasDisability,
+        'isGraduatingFromSmallNursery': isGraduatingFromSmallNursery,
+        'grandparentCanCare': grandparentCanCare,
+        'acceptsLeaveExtension': acceptsLeaveExtension,
+        'hasUnpaidFees': hasUnpaidFees,
+      };
+
+  /// JSON デシリアライズ（父母は別途復元してcopyWithで差し込む）
+  factory FamilyProfile.fromJson(Map<String, dynamic> json) {
+    return FamilyProfile(
+      father: const ParentProfile.initial(),
+      mother: const ParentProfile.initial(),
+      isSingleParent: json['isSingleParent'] as bool? ?? false,
+      isPseudoSingleParent: json['isPseudoSingleParent'] as bool? ?? false,
+      isYoungParent: json['isYoungParent'] as bool? ?? false,
+      isOnWelfare: json['isOnWelfare'] as bool? ?? false,
+      nurseryWorkerType: NurseryWorkerType.values.byName(
+        json['nurseryWorkerType'] as String? ?? NurseryWorkerType.none.name,
+      ),
+      returningFromLeave: json['returningFromLeave'] as bool? ?? false,
+      hasDisabilityAndWorks: json['hasDisabilityAndWorks'] as bool? ?? false,
+      isTransferredAway: json['isTransferredAway'] as bool? ?? false,
+      isUsingNinkagai: json['isUsingNinkagai'] as bool? ?? false,
+      siblingAtFirstChoiceNursery:
+          json['siblingAtFirstChoiceNursery'] as bool? ?? false,
+      twoSiblingsApplyingSameNursery:
+          json['twoSiblingsApplyingSameNursery'] as bool? ?? false,
+      siblingHasDisability: json['siblingHasDisability'] as bool? ?? false,
+      isGraduatingFromSmallNursery:
+          json['isGraduatingFromSmallNursery'] as bool? ?? false,
+      grandparentCanCare: json['grandparentCanCare'] as bool? ?? false,
+      acceptsLeaveExtension:
+          json['acceptsLeaveExtension'] as bool? ?? false,
+      hasUnpaidFees: json['hasUnpaidFees'] as bool? ?? false,
+    );
+  }
+
   FamilyProfile copyWith({
     ParentProfile? father,
     ParentProfile? mother,
