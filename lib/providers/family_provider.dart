@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/family_profile.dart';
@@ -14,7 +16,7 @@ class FamilyProfileNotifier extends Notifier<FamilyProfile> {
     state = await SecureStorage.loadFamily();
   }
 
-  void _save() => SecureStorage.saveFamily(state);
+  void _save() => unawaited(SecureStorage.saveFamily(state));
 
   void updateSingleParent(bool value) {
     state = state.copyWith(isSingleParent: value);

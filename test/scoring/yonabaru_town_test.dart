@@ -1,3 +1,5 @@
+import 'package:hokatsu_score/models/care_level.dart';
+import 'package:hokatsu_score/models/disability_grade.dart';
 import 'package:hokatsu_score/models/family_profile.dart';
 import 'package:hokatsu_score/models/parent_profile.dart';
 import 'package:hokatsu_score/models/work_status.dart';
@@ -45,6 +47,34 @@ void main() {
     test('入院 → 10点', () {
       expect(rule.calcWorkScore(const ParentProfile(
           workStatus: WorkStatus.hospitalizedBedridden)), 10);
+    });
+  });
+
+  group('calcDisabilityScore', () {
+    test('身体1-2級 → 10点', () {
+      expect(rule.calcDisabilityScore(const ParentProfile(
+          disabilityGrade: DisabilityGrade.physical1to2)), 10);
+    });
+    test('身体3級 → 8点', () {
+      expect(rule.calcDisabilityScore(const ParentProfile(
+          disabilityGrade: DisabilityGrade.physical3)), 8);
+    });
+  });
+
+  group('calcCareScore', () {
+    test('介護中 + 要介護5 → 9点', () {
+      expect(rule.calcCareScore(const ParentProfile(
+          workStatus: WorkStatus.caregiving, careLevel: CareLevel.care5)), 9);
+    });
+    test('介護中でない → 0点', () {
+      expect(rule.calcCareScore(const ParentProfile(
+          workStatus: WorkStatus.employed, careLevel: CareLevel.care5)), 0);
+    });
+  });
+
+  group('calcTotalScore - 初期状態', () {
+    test('初期状態 → 0点', () {
+      expect(rule.calcTotalScore(FamilyProfile.initial()), 0);
     });
   });
 

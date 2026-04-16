@@ -26,4 +26,26 @@ class ScoreResult {
 
   /// 合計指数
   final int total;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ScoreResult &&
+          runtimeType == other.runtimeType &&
+          municipalityName == other.municipalityName &&
+          fiscalYear == other.fiscalYear &&
+          fatherBase == other.fatherBase &&
+          motherBase == other.motherBase &&
+          adjustScore == other.adjustScore &&
+          total == other.total;
+
+  @override
+  int get hashCode => Object.hash(
+        municipalityName,
+        fiscalYear,
+        fatherBase,
+        motherBase,
+        adjustScore,
+        total,
+      );
 }

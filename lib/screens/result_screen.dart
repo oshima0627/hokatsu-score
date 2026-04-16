@@ -18,8 +18,9 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   @override
   void initState() {
     super.initState();
-    // 結果画面表示前にインタースティシャル広告を表示（1セッション1回）
-    AdManager.showInterstitialIfReady();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AdManager.showInterstitialIfReady();
+    });
   }
 
   @override

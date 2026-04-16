@@ -30,7 +30,9 @@ android {
     buildTypes {
         release {
             // リリースビルドではR8による難読化・縮小を有効化
-            signingConfig = signingConfigs.debug // TODO: リリース用署名鍵に差し替え
+            // リリース前に key.properties + *.jks を作成し signingConfigs.release に差し替えること
+            // 参考: https://docs.flutter.dev/deployment/android#sign-the-app
+            signingConfig = signingConfigs.debug
             minifyEnabled = true
             shrinkResources = true
             proguardFiles(

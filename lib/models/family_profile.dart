@@ -198,4 +198,52 @@ class FamilyProfile {
       hasUnpaidFees: hasUnpaidFees ?? this.hasUnpaidFees,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is FamilyProfile &&
+          runtimeType == other.runtimeType &&
+          father == other.father &&
+          mother == other.mother &&
+          isSingleParent == other.isSingleParent &&
+          isPseudoSingleParent == other.isPseudoSingleParent &&
+          isYoungParent == other.isYoungParent &&
+          isOnWelfare == other.isOnWelfare &&
+          nurseryWorkerType == other.nurseryWorkerType &&
+          returningFromLeave == other.returningFromLeave &&
+          hasDisabilityAndWorks == other.hasDisabilityAndWorks &&
+          isTransferredAway == other.isTransferredAway &&
+          isUsingNinkagai == other.isUsingNinkagai &&
+          siblingAtFirstChoiceNursery == other.siblingAtFirstChoiceNursery &&
+          twoSiblingsApplyingSameNursery ==
+              other.twoSiblingsApplyingSameNursery &&
+          siblingHasDisability == other.siblingHasDisability &&
+          isGraduatingFromSmallNursery ==
+              other.isGraduatingFromSmallNursery &&
+          grandparentCanCare == other.grandparentCanCare &&
+          acceptsLeaveExtension == other.acceptsLeaveExtension &&
+          hasUnpaidFees == other.hasUnpaidFees;
+
+  @override
+  int get hashCode => Object.hash(
+        father,
+        mother,
+        isSingleParent,
+        isPseudoSingleParent,
+        isYoungParent,
+        isOnWelfare,
+        nurseryWorkerType,
+        returningFromLeave,
+        hasDisabilityAndWorks,
+        isTransferredAway,
+        isUsingNinkagai,
+        siblingAtFirstChoiceNursery,
+        twoSiblingsApplyingSameNursery,
+        siblingHasDisability,
+        isGraduatingFromSmallNursery,
+        grandparentCanCare,
+        acceptsLeaveExtension,
+        hasUnpaidFees,
+      );
 }

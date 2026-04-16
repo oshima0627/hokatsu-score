@@ -74,4 +74,24 @@ class ParentProfile {
       isLeaveTarget: isLeaveTarget ?? this.isLeaveTarget,
     );
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ParentProfile &&
+          runtimeType == other.runtimeType &&
+          workStatus == other.workStatus &&
+          monthlyWorkHours == other.monthlyWorkHours &&
+          disabilityGrade == other.disabilityGrade &&
+          careLevel == other.careLevel &&
+          isLeaveTarget == other.isLeaveTarget;
+
+  @override
+  int get hashCode => Object.hash(
+        workStatus,
+        monthlyWorkHours,
+        disabilityGrade,
+        careLevel,
+        isLeaveTarget,
+      );
 }
