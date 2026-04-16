@@ -28,8 +28,7 @@ hokatsu-score/
 │   │   ├── result_screen.dart            # 結果表示
 │   │   └── settings_screen.dart          # 設定（保存データ削除など）
 │   ├── widgets/
-│   │   ├── ad_banner_widget.dart         # AdMobバナー
-│   │   └── score_card_widget.dart        # スコア表示カード
+│   │   └── ad_banner_widget.dart         # AdMobバナー
 │   ├── storage/
 │   │   └── secure_storage.dart           # flutter_secure_storage ラッパ
 │   └── scoring/

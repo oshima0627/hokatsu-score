@@ -3,7 +3,7 @@ import 'package:hokatsu_score/models/nursery_worker_type.dart';
 import 'package:hokatsu_score/models/parent_profile.dart';
 import 'package:hokatsu_score/models/work_status.dart';
 import 'package:hokatsu_score/scoring/yaese_town.dart';
-import 'package:test/test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   late YaeseTownScoringRule rule;

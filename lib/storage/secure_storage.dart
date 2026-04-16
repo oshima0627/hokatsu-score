@@ -4,7 +4,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../models/family_profile.dart';
 import '../models/parent_profile.dart';
-import '../scoring/municipality.dart';
 
 /// flutter_secure_storage を使った暗号化ストレージラッパー
 class SecureStorage {
@@ -14,11 +13,9 @@ class SecureStorage {
     aOptions: AndroidOptions(encryptedSharedPreferences: true),
   );
 
-  // ストレージキー
   static const _keyFather = 'father_profile';
   static const _keyMother = 'mother_profile';
   static const _keyFamily = 'family_profile';
-  static const _keyMunicipality = 'selected_municipality';
 
   // ---------------------------------------------------------------------------
   // 父プロファイル
@@ -75,24 +72,6 @@ class SecureStorage {
     return FamilyProfile.fromJson(
       jsonDecode(raw) as Map<String, dynamic>,
     );
-  }
-
-  // ---------------------------------------------------------------------------
-  // 選択中の自治体
-  // ---------------------------------------------------------------------------
-
-  static Future<void> saveMunicipality(Municipality municipality) async {
-    await _storage.write(key: _keyMunicipality, value: municipality.name);
-  }
-
-  static Future<Municipality> loadMunicipality() async {
-    final raw = await _storage.read(key: _keyMunicipality);
-    if (raw == null) return Municipality.naha;
-    try {
-      return Municipality.values.byName(raw);
-    } on ArgumentError {
-      return Municipality.naha;
-    }
   }
 
   // ---------------------------------------------------------------------------
